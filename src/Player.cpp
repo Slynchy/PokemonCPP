@@ -30,10 +30,10 @@ void Animation::init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int 
 	this->flip_Flag.push_back(f4_flip);
 };
 
-void Player::KeyboardInput(const Uint8 *keyboardstate, int (&levelCollisionArray)[18][20])
+void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 {
 	if(!Player::m_moving){
-		if(keyboardstate[SDL_SCANCODE_W])
+		if(keys->W)
 		{
 			direction = UP;
 			Player::m_moving = true;
@@ -41,7 +41,7 @@ void Player::KeyboardInput(const Uint8 *keyboardstate, int (&levelCollisionArray
 			{
 				Player::m_y -= 1;
 			};
-		} else if(keyboardstate[SDL_SCANCODE_S])
+		} else if(keys->S)
 		{
 			direction = DOWN;
 			Player::m_moving = true;
@@ -49,7 +49,7 @@ void Player::KeyboardInput(const Uint8 *keyboardstate, int (&levelCollisionArray
 			{
 				Player::m_y += 1;
 			};
-		} else if(keyboardstate[SDL_SCANCODE_A])
+		} else if(keys->A)
 		{
 			direction = LEFT;
 			Player::m_moving = true;
@@ -57,7 +57,7 @@ void Player::KeyboardInput(const Uint8 *keyboardstate, int (&levelCollisionArray
 			{
 				Player::m_x -= 1;
 			};
-		} else if(keyboardstate[SDL_SCANCODE_D])
+		} else if(keys->D)
 		{
 			direction = RIGHT;
 			Player::m_moving = true;
@@ -135,6 +135,7 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	animationFrame = 0;	
 	animationFrame2 = 0;
 	direction = DOWN;
+	zoneIndex = 0; // palletTown = 0, route 1 = 1, etc.
 	m_x = 6;
 	m_y = 6;
 	m_moving = false;
@@ -142,9 +143,27 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	return;
 };
 
-bool Player::CheckCollision(int (&levelCollisionArray)[18][20], int x_pos, int y_pos)
+bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos)
 {
-	if(levelCollisionArray[y_pos][x_pos] == -1)
+	if(Player::zoneIndex == -1) return false;
+	if(x_pos > (unsigned char)levelCollisionArray[Player::zoneIndex].objectData[0].size() || 
+		y_pos > (unsigned char)(levelCollisionArray[Player::zoneIndex].objectData.size()-1) ||
+		x_pos < 0 ||
+		y_pos < 0)
+	{
+		if(CheckZone(levelCollisionArray, x_pos, y_pos-1) != -1 && CheckZone(levelCollisionArray, x_pos, y_pos-1) != Player::zoneIndex)
+		{
+			return false;
+		};
+	};
+
+	int zonePos_X = (x_pos - levelCollisionArray[Player::zoneIndex].world_x );
+	int zonePos_Y = (y_pos - levelCollisionArray[Player::zoneIndex].world_y );
+	if(zonePos_X < 0 || zonePos_Y < 0 || zonePos_X > levelCollisionArray[Player::zoneIndex].x_size || zonePos_Y > levelCollisionArray[Player::zoneIndex].y_size)
+	{
+		return false;
+	};
+	if(levelCollisionArray[Player::zoneIndex].objectData[zonePos_Y][zonePos_X] == -1)
 	{
 		return false;
 	}

@@ -3,7 +3,9 @@
 #include "src/SDLFunctions.h"
 #include "Player.h"
 #include <iostream>
-#include <chrono>
+#include <fstream>
+#include <string>
+
 #define FPS 60
 
 #define screenW 160
@@ -11,45 +13,32 @@
 
 #define VIEWPORT_MOVEMENT_SPEED 0.05
 
-int palletTown_Collision[18][20] = //std::vector<int> levelTest[18][20] = 
-{
-	{-1,-1,-1,0,-1,-1,-1,-1,-1,0,-1,-1,0,-1,-1,-1,-1,-1,0,-1},
-	{0,0,0,0,0,0,0,0,0,0,-1,-1,0,0,0,0,0,0,0,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,0,-1,-1,-1,-1,0,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,0,-1,-1,-1,-1,0,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,4,0,1,0,0,-1,-1,-1,4,0,1,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,4,-1,-1,0,0,0,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,1,0,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,4,0,0,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,-1,-1,-1,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0},
-	{0,0,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-};
-
 struct Viewport
 {
 	int m_x;
 	int m_y;
 };
-void Shutdown(SDL_Texture *area_PalletTown);
-void Draw(SDL_Renderer *sdlRenderer, SDL_Texture *palletTown,int scrW, int scrH, Player *player, Viewport *viewport);
+void Shutdown(std::vector<Zone> Zones,Player *player);
+void Draw(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
 double LinearInterpolate(double y1,double y2,double mu);
+void UpdateViewport(Viewport *viewport, Player *player);
 
 int main(int argc, char* argv[]) 
 {
+
+	Objects WorldObjects[5];
+	WorldObjects[0].Init("Empty Collision Space", true);
+	WorldObjects[1].Init("Grass", false);
+	WorldObjects[2].Init();
+	WorldObjects[3].Init();
+	WorldObjects[4].Init("WarpSpace", false);
+
 	SDL_Init( SDL_INIT_EVERYTHING );
 	SDL_Window* screen;
 	SDL_Renderer *sdlRenderer;
 	SDL_Event events;
 	//SDL_CreateWindowAndRenderer(screenW, screenH, SDL_WINDOW_RESIZABLE, &screen, &sdlRenderer);
-	screen = SDL_CreateWindow("PokemonCPP Prototype", 600, 200, screenW*3, screenH*3, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
+	screen = SDL_CreateWindow("PokemonC++ Prototype", 600, 200, screenW*3, screenH*3, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
     sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
 	SDL_RenderSetLogicalSize(sdlRenderer, screenW, screenH);
 	const Uint8 *keyboardstate;
@@ -67,18 +56,20 @@ int main(int argc, char* argv[])
 
 	Player player;
 	player.Init(sdlRenderer);
+	Keys keys;
+	keys.Reset();
 
 	Viewport viewport;
 	viewport.m_x = (8 + (16 * player.m_x));
 	viewport.m_y = (8 + (16 * player.m_y));
 
-	SDL_Texture *area_PalletTown;
-	area_PalletTown = IMG_LoadTexture(sdlRenderer,  "pallet.png");
-	if(!area_PalletTown)
-	{
-		fprintf(stderr, "Couldn't load texture: %s\n", SDL_GetError());
-		return -1;
-	};
+	std::vector<Zone> CURR_ZONES;
+	Zone area_PalletTown;
+	Zone area_Route1;
+	CURR_ZONES.push_back(area_PalletTown);
+	CURR_ZONES.push_back(area_Route1);
+	CURR_ZONES[0].Init("pallet.png",sdlRenderer,"pallet.bin");
+	CURR_ZONES[1].Init("route1.png",sdlRenderer,"route1.bin");
 
 	bool quit = false;
 	while( !quit )
@@ -95,50 +86,37 @@ int main(int argc, char* argv[])
 					break;
 			}
 		};
-		std::cout << palletTown_Collision[player.m_y][player.m_x] << std::endl;
 		keyboardstate = SDL_GetKeyboardState(NULL);
 		if(keyboardstate[SDL_SCANCODE_ESCAPE])
 		{
 			quit=true;
 		};
+		keys.Update(keyboardstate);
 
-		//std::cout << std::endl << viewport.m_x << std::endl << (8 + (16 * player.m_x)) << std::endl;
-		if(viewport.m_x != (8 + (16 * player.m_x)))
-		{
-			if(player.direction == RIGHT)
-			{
-				viewport.m_x = (int)ceil(LinearInterpolate(viewport.m_x,(int)(8 + (16 * player.m_x)),VIEWPORT_MOVEMENT_SPEED));
-			} else {//if(player.direction == LEFT) {
-				viewport.m_x = (int)floor(LinearInterpolate(viewport.m_x,(int)(8 + (16 * player.m_x)),VIEWPORT_MOVEMENT_SPEED));
-			};
-		};
-		if(viewport.m_y != (8 + (16 * player.m_y)))
-		{
-			if(player.direction == DOWN)
-			{
-				viewport.m_y = (int)ceil(LinearInterpolate(viewport.m_y,(int)(8 + (16 * player.m_y)),VIEWPORT_MOVEMENT_SPEED));
-			} else {//if(player.direction == UP) {
-				viewport.m_y = (int)floor(LinearInterpolate(viewport.m_y,(int)(8 + (16 * player.m_y)),VIEWPORT_MOVEMENT_SPEED));
-			};
-		};
-		if(viewport.m_x == (8 + (16 * player.m_x)) && viewport.m_y == (8 + (16 * player.m_y)))
-		{
-			player.m_moving = false;	
-		};
+		UpdateViewport(&viewport,&player);
 
-		player.KeyboardInput(keyboardstate,palletTown_Collision);
-		Draw(sdlRenderer,area_PalletTown,screenW,screenH, &player, &viewport);
+		player.KeyboardInput(&keys,CURR_ZONES);
+
+		player.zoneIndex = CheckZone(CURR_ZONES,player.m_x,player.m_y);
+
+		Draw(sdlRenderer,CURR_ZONES,screenW,screenH, &player, &viewport);
 		SDL_RenderPresent(sdlRenderer);
+		keys.Reset();
 		SDL_Delay(1000/FPS);
 	};
 
-	Shutdown(area_PalletTown);
+	Shutdown(CURR_ZONES,&player);
     return 0;
 }
 
-void Shutdown(SDL_Texture *area_PalletTown)
+void Shutdown(std::vector<Zone> Zones,Player *player)
 {
-	SDL_DestroyTexture(area_PalletTown);
+	for(int i = 0; i < (unsigned char)Zones.size(); i++)
+	{
+		SDL_DestroyTexture(Zones[i].image);
+	};
+	SDL_DestroyTexture(player->spritesheet);
+	Zones.clear();
 	ShutdownSDL();
 };
 
@@ -147,7 +125,7 @@ double LinearInterpolate(double y1,double y2,double mu)
 	return(y1*(1-mu)+y2*mu);
 }
 
-void Draw(SDL_Renderer *sdlRenderer, SDL_Texture *palletTown,int scrW, int scrH, Player *player, Viewport *viewport)
+void Draw(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport)
 {
 	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(sdlRenderer);	
@@ -161,7 +139,43 @@ void Draw(SDL_Renderer *sdlRenderer, SDL_Texture *palletTown,int scrW, int scrH,
 		viewport->m_y*-1,
 		144,
 		120};
-	SDL_RenderCopyEx(sdlRenderer,palletTown,NULL,&tempRect,0,NULL,SDL_FLIP_NONE);
+	for(int i = 0; i < (unsigned char)Zone_To_Draw.size(); i++)
+	{
+		SDL_Rect tempRect = {
+			(viewport->m_x*-1)+(5*16)+(Zone_To_Draw[i].world_x*16),
+			(viewport->m_y*-1)+(5*16)+(Zone_To_Draw[i].world_y*16),
+			Zone_To_Draw[i].x_size * 16,
+			Zone_To_Draw[i].y_size * 16};
+		SDL_RenderCopyEx(sdlRenderer,Zone_To_Draw[i].image,NULL,&tempRect,0,NULL,SDL_FLIP_NONE);
+	};
 	//SDL_RenderCopy(sdlRenderer,palletTown,NULL,&tempRect);
 	player->Draw(sdlRenderer);
+};
+
+void UpdateViewport(Viewport *viewport, Player *player)
+{
+	if(viewport->m_x != (8 + (16 * player->m_x)))
+	{
+		if(player->direction == RIGHT)
+		{
+			viewport->m_x = (int)ceil(LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
+		} else {//if(player.direction == LEFT) {
+			viewport->m_x = (int)floor(LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
+		};
+	};
+	if(viewport->m_y != (8 + (16 * player->m_y)))
+	{
+		if(player->direction == DOWN)
+		{
+			viewport->m_y = (int)ceil(LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
+		} else {//if(player.direction == UP) {
+			viewport->m_y = (int)floor(LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
+		};
+	};
+	if(viewport->m_x == (8 + (16 * player->m_x)) && viewport->m_y == (8 + (16 * player->m_y)))
+	{
+		// init pokebattle here
+		player->m_moving = false;	
+	};
+	return;
 };

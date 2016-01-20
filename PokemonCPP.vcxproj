@@ -79,9 +79,13 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\SDLFunctions.cpp" />
+    <ClCompile Include="src\Zones.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\Keyboard.h" />
     <ClInclude Include="headers\Player.h" />
+    <ClInclude Include="headers\Pokemon.h" />
+    <ClInclude Include="headers\Zones.h" />
     <ClInclude Include="src\SDLFunctions.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
