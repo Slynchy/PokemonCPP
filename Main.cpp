@@ -1,5 +1,6 @@
 #include "SDL.h" // Main SDL library
 #include <SDL_image.h> // SDL Image library
+#include <SDL_ttf.h>
 #include "src/SDLFunctions.h"
 #include "Player.h"
 #include <iostream>
@@ -19,7 +20,7 @@ struct Viewport
 	int m_y;
 };
 void Shutdown(std::vector<Zone> Zones,Player *player);
-void Draw(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
+void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
 double LinearInterpolate(double y1,double y2,double mu);
 void UpdateViewport(Viewport *viewport, Player *player);
 
@@ -38,21 +39,14 @@ int main(int argc, char* argv[])
 	SDL_Renderer *sdlRenderer;
 	SDL_Event events;
 	//SDL_CreateWindowAndRenderer(screenW, screenH, SDL_WINDOW_RESIZABLE, &screen, &sdlRenderer);
-	screen = SDL_CreateWindow("PokemonC++ Prototype", 600, 200, screenW*3, screenH*3, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
+	screen = SDL_CreateWindow("PokemonC++ Prototype", 600, 200, screenW, screenH, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
     sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
 	SDL_RenderSetLogicalSize(sdlRenderer, screenW, screenH);
+	if( TTF_Init() == -1 )
+    {
+        return -1;    
+    };
 	const Uint8 *keyboardstate;
-
-	SDL_GLContext context;
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 4);			// 16-bit colour depth
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);		// Automatic Double Buffering
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);	// Hardware acceleration
-	context = SDL_GL_CreateContext(screen);
-	if (!context) 
-	{
-		fprintf(stderr, "Couldn't create context: %s\n", SDL_GetError());
-		return -1;
-	}
 
 	Player player;
 	player.Init(sdlRenderer);
@@ -70,6 +64,15 @@ int main(int argc, char* argv[])
 	CURR_ZONES.push_back(area_Route1);
 	CURR_ZONES[0].Init("pallet.png",sdlRenderer,"pallet.bin");
 	CURR_ZONES[1].Init("route1.png",sdlRenderer,"route1.bin");
+
+	Message HelloWorld;
+	HelloWorld.Create("OAK: Its dangerous to go alone! Take this!");
+	SDL_Texture *frame = IMG_LoadTexture(sdlRenderer, "text-frame.png");
+
+	TTF_Font *font = NULL;
+	font = TTF_OpenFont( "PokemonGB.ttf", 8);
+	TTF_SetFontKerning(font, 0);
+	TTF_SetFontHinting(font, TTF_HINTING_MONO);
 
 	bool quit = false;
 	while( !quit )
@@ -91,15 +94,27 @@ int main(int argc, char* argv[])
 		{
 			quit=true;
 		};
+		if(keyboardstate[SDL_SCANCODE_SPACE])
+		{
+			player.InBattle = true;
+		};
 		keys.Update(keyboardstate);
+		
+		SDL_SetRenderDrawColor(sdlRenderer, 255, 255, 255, 255);
+		SDL_RenderClear(sdlRenderer);	
+		if(player.InBattle == false)
+		{
+			UpdateViewport(&viewport,&player);
+			player.zoneIndex = CheckZone(CURR_ZONES,player.m_x,player.m_y);
+			player.KeyboardInput(&keys,CURR_ZONES);
+			DrawOverworld(sdlRenderer,CURR_ZONES,screenW,screenH, &player, &viewport);
+		}
+		else 
+		{
+			
+		};
+		//HelloWorld.Draw(sdlRenderer, frame, font);
 
-		UpdateViewport(&viewport,&player);
-
-		player.KeyboardInput(&keys,CURR_ZONES);
-
-		player.zoneIndex = CheckZone(CURR_ZONES,player.m_x,player.m_y);
-
-		Draw(sdlRenderer,CURR_ZONES,screenW,screenH, &player, &viewport);
 		SDL_RenderPresent(sdlRenderer);
 		keys.Reset();
 		SDL_Delay(1000/FPS);
@@ -125,10 +140,8 @@ double LinearInterpolate(double y1,double y2,double mu)
 	return(y1*(1-mu)+y2*mu);
 }
 
-void Draw(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport)
+void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport)
 {
-	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-	SDL_RenderClear(sdlRenderer);	
 	SDL_Rect tempRect = {
 		(viewport->m_x*-1)+(5*16),
 		(viewport->m_y*-1)+(5*16),
@@ -148,7 +161,6 @@ void Draw(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, i
 			Zone_To_Draw[i].y_size * 16};
 		SDL_RenderCopyEx(sdlRenderer,Zone_To_Draw[i].image,NULL,&tempRect,0,NULL,SDL_FLIP_NONE);
 	};
-	//SDL_RenderCopy(sdlRenderer,palletTown,NULL,&tempRect);
 	player->Draw(sdlRenderer);
 };
 

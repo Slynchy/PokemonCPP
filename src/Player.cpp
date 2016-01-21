@@ -1,5 +1,22 @@
 #include "Player.h"
 
+void InitPokeParty(PokeParty *party)
+{
+	party->Num_of_Pokemon = 0;
+	party->Poke1_index = 0;
+	party->Poke2_index = 0;
+	party->Poke3_index = 0;
+	party->Poke4_index = 0;
+	party->Poke5_index = 0;
+	party->Poke6_index = 0;
+	InitPokemon(&party->Poke1);
+	InitPokemon(&party->Poke2);
+	InitPokemon(&party->Poke3);
+	InitPokemon(&party->Poke4);
+	InitPokemon(&party->Poke5);
+	InitPokemon(&party->Poke6);
+};
+
 void Animation::init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int f2_y, SDL_RendererFlip f2_flip)
 {
 	this->frames.push_back(SDL_CreateRect(f1_x,f1_y,16,16));
@@ -32,7 +49,7 @@ void Animation::init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int 
 
 void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 {
-	if(!Player::m_moving){
+	if(!Player::m_moving && CanMove == true){
 		if(keys->W)
 		{
 			direction = UP;
@@ -140,6 +157,10 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	m_y = 6;
 	m_moving = false;
 	spritesheet = IMG_LoadTexture(sdlRenderer, "player.png");
+	InBattle = false;
+	CanMove = true;
+
+	InitPokeParty(&party);
 	return;
 };
 

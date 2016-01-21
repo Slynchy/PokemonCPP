@@ -2,7 +2,8 @@
 #include <SDL_image.h> // SDL Image library
 #include "../src/SDLFunctions.h"
 #include "Zones.h"
-#include "Keyboard.h"
+#include "Text.h"
+#include "Pokemon.h"
 #include <math.h>
 #include <vector>
 #include <iostream>
@@ -18,11 +19,30 @@ struct Animation
 	void init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int f2_y, SDL_RendererFlip f2_flip, int f3_x, int f3_y, SDL_RendererFlip f3_flip, int f4_x, int f4_y, SDL_RendererFlip f4_flip);
 };
 
+struct PokeParty
+{
+	unsigned char Num_of_Pokemon;
+	unsigned char Poke1_index;
+	unsigned char Poke2_index;
+	unsigned char Poke3_index;
+	unsigned char Poke4_index;
+	unsigned char Poke5_index;
+	unsigned char Poke6_index;
+	Pokemon Poke1;
+	Pokemon Poke2;
+	Pokemon Poke3;
+	Pokemon Poke4;
+	Pokemon Poke5;
+	Pokemon Poke6;
+};
+void InitPokeParty(PokeParty *party);
+
 class Player
 {
 	private:
 
 	public:
+		PokeParty party;
 		int m_x;
 		int m_y;
 		SDL_Texture *spritesheet;
@@ -34,6 +54,8 @@ class Player
 		unsigned char animationFrame;
 		unsigned char animationFrame2;
 		int zoneIndex;
+		bool InBattle;
+		bool CanMove;
 
 		Animation walkingLeftRight;
 		Animation walkingUp;
