@@ -8,6 +8,9 @@
 #include <vector>
 #include <iostream>
 
+#ifndef PLAYER_H
+#define PLAYER_H
+
 enum directions { RIGHT , LEFT , UP , DOWN };
 
 struct Animation
@@ -28,12 +31,18 @@ struct PokeParty
 	unsigned char Poke4_index;
 	unsigned char Poke5_index;
 	unsigned char Poke6_index;
-	Pokemon Poke1;
+	std::vector<Pokemon> Party;
+	/*Pokemon Poke1;
 	Pokemon Poke2;
 	Pokemon Poke3;
 	Pokemon Poke4;
 	Pokemon Poke5;
-	Pokemon Poke6;
+	Pokemon Poke6;*/
+	void InsertPokemon(Pokemon* _pokemon)
+	{
+		Party.push_back(*_pokemon);	
+		return;
+	};
 };
 void InitPokeParty(PokeParty *party);
 
@@ -45,6 +54,7 @@ class Player
 		PokeParty party;
 		int m_x;
 		int m_y;
+		int ActivePokemon;
 		SDL_Texture *spritesheet;
 		bool m_moving;
 		directions direction;
@@ -67,3 +77,5 @@ class Player
 		bool CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos);
 
 };
+
+#endif

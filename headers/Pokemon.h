@@ -1,8 +1,9 @@
 #include <string>
 #include "SDL.h"
 #include "SDL_image.h"
+#include <vector>
+#include <iostream>
 #include "Moves.h"
-
 
 #ifndef POKEMON_H
 #define POKEMON_H
@@ -28,29 +29,25 @@ Wchar_t				2 or 4	0				65,535
 */
 #pragma pack(1)
 
-enum TYPES 
+const std::string pokemon_names[151] = 
 {
-	NORMAL , 
-	FIGHTING , 
-	FLYING , 
-	POISON ,
-	GROUND ,
-	ROCK ,
-	BIRD ,
-	BUG ,
-	GHOST ,
-	BLANK_1 ,
-	BLANK_2 ,
-	BLANK_3 ,
-	BLANK_4 ,
-	BLANK_5 ,
-	FIRE ,
-	WATER ,
-	GRASS ,
-	ELECTRIC ,
-	PSYCHIC ,
-	ICE ,
-	DRAGON
+	"BULBASAUR"
+};
+
+enum POKEMON_IDS
+{
+	BULBASAUR
+};
+
+const std::string pokemon_filenames[151] = 
+{
+	"bulbasaur.png"
+};
+
+struct LoadedPokeSprites
+{
+	std::vector<SDL_Texture*> POKEMON_FRONT_SPRITES;
+	std::vector<SDL_Texture*> POKEMON_BACK_SPRITES;
 };
 
 
@@ -129,8 +126,8 @@ void InitPokemon(Pokemon *pokemon);
 
 const PokedexPokemon POKEDEX_REFERENCE[151] = 
 {
-	{ // BULBASAUR
-		0,						// id
+	{ 
+		BULBASAUR,				// id
 		45,						// basehp
 		49,						
 		49, 
@@ -188,5 +185,11 @@ Pokemon CreatePokemon(
 	signed short int Defence,
 	signed short int Speed,
 	signed short int Special);
+
+Pokemon CreatePokemon(
+	unsigned char Index);
+
+int LoadPokemonFrontSprites(SDL_Renderer*, LoadedPokeSprites*);
+int LoadPokemonBackSprites(SDL_Renderer*, LoadedPokeSprites*);
 
 #endif

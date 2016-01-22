@@ -9,12 +9,10 @@ void InitPokeParty(PokeParty *party)
 	party->Poke4_index = 0;
 	party->Poke5_index = 0;
 	party->Poke6_index = 0;
-	InitPokemon(&party->Poke1);
-	InitPokemon(&party->Poke2);
-	InitPokemon(&party->Poke3);
-	InitPokemon(&party->Poke4);
-	InitPokemon(&party->Poke5);
-	InitPokemon(&party->Poke6);
+	for( int i = 0; i < party->Party.size(); i++)
+	{
+		InitPokemon(&party->Party[i]);
+	};
 };
 
 void Animation::init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int f2_y, SDL_RendererFlip f2_flip)
@@ -159,6 +157,7 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	spritesheet = IMG_LoadTexture(sdlRenderer, "player.png");
 	InBattle = false;
 	CanMove = true;
+	ActivePokemon = 0;
 
 	InitPokeParty(&party);
 	return;

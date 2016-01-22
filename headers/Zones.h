@@ -4,6 +4,9 @@
 #include <fstream> 
 #include <string> 
 
+#ifndef ZONES_H
+#define ZONES_H
+
 struct Objects
 {
 	std::string name;
@@ -38,3 +41,4 @@ class Zone
 
 int CheckZone(std::vector<Zone>& _Zones, int _x, int _y);
 
+#endif

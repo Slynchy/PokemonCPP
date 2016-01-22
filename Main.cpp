@@ -1,8 +1,8 @@
 #include "SDL.h" // Main SDL library
 #include <SDL_image.h> // SDL Image library
-#include <SDL_ttf.h>
 #include "src/SDLFunctions.h"
 #include "Player.h"
+#include "Battle.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -14,15 +14,20 @@
 
 #define VIEWPORT_MOVEMENT_SPEED 0.05
 
+LoadedPokeSprites LoadedPokemonSprites;
+
 struct Viewport
 {
 	int m_x;
 	int m_y;
 };
+
 void Shutdown(std::vector<Zone> Zones,Player *player);
 void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
+void DrawBattle(SDL_Renderer*, Player*, Battle*,BattleScreen*, SDL_Texture*, SDL_Texture*);
 double LinearInterpolate(double y1,double y2,double mu);
 void UpdateViewport(Viewport *viewport, Player *player);
+void DrawNumber(unsigned char, int, int, SDL_Texture*, SDL_Renderer*, bool);
 
 int main(int argc, char* argv[]) 
 {
@@ -42,16 +47,19 @@ int main(int argc, char* argv[])
 	screen = SDL_CreateWindow("PokemonC++ Prototype", 600, 200, screenW, screenH, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
     sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
 	SDL_RenderSetLogicalSize(sdlRenderer, screenW, screenH);
-	if( TTF_Init() == -1 )
-    {
-        return -1;    
-    };
 	const Uint8 *keyboardstate;
+
+	//const char* MoveNames[164];
+	//MoveNames = InitializeMoveNames();
 
 	Player player;
 	player.Init(sdlRenderer);
 	Keys keys;
-	keys.Reset();
+	keys.Init();
+	if(LoadPokemonFrontSprites(sdlRenderer,&LoadedPokemonSprites) == -1 || LoadPokemonBackSprites(sdlRenderer,&LoadedPokemonSprites) == -1)
+	{
+		return -1;
+	};
 
 	Viewport viewport;
 	viewport.m_x = (8 + (16 * player.m_x));
@@ -65,14 +73,25 @@ int main(int argc, char* argv[])
 	CURR_ZONES[0].Init("pallet.png",sdlRenderer,"pallet.bin");
 	CURR_ZONES[1].Init("route1.png",sdlRenderer,"route1.bin");
 
+	SDL_Texture* numbers = IMG_LoadTexture(sdlRenderer, "numbers.png");
+	SDL_Texture* UpperCaseFont = IMG_LoadTexture(sdlRenderer, "UpperCaseFont.png");
+
 	Message HelloWorld;
 	HelloWorld.Create("OAK: Its dangerous to go alone! Take this!");
 	SDL_Texture *frame = IMG_LoadTexture(sdlRenderer, "text-frame.png");
 
-	TTF_Font *font = NULL;
-	font = TTF_OpenFont( "PokemonGB.ttf", 8);
-	TTF_SetFontKerning(font, 0);
-	TTF_SetFontHinting(font, TTF_HINTING_MONO);
+	Pokemon opponent = CreatePokemon(BULBASAUR);
+	Pokemon playerpoke = CreatePokemon(BULBASAUR);
+	player.party.InsertPokemon(&playerpoke);
+	player.party.Party[0].Level = 25;
+
+	Battle currentBattle;
+	currentBattle.CreateBattle(&player.party, &opponent);
+	BattleScreen BattleSprites;
+	if(BattleSprites.Load(sdlRenderer) == -1)
+	{
+		return -1;	
+	};
 
 	bool quit = false;
 	while( !quit )
@@ -98,8 +117,12 @@ int main(int argc, char* argv[])
 		{
 			player.InBattle = true;
 		};
-		keys.Update(keyboardstate);
-		
+		keys.Timer++;
+		if(keys.Timer >= 15 || player.InBattle == false)
+		{
+			keys.Update(keyboardstate);
+		};
+
 		SDL_SetRenderDrawColor(sdlRenderer, 255, 255, 255, 255);
 		SDL_RenderClear(sdlRenderer);	
 		if(player.InBattle == false)
@@ -111,9 +134,9 @@ int main(int argc, char* argv[])
 		}
 		else 
 		{
-			
+			currentBattle.Logic(&keys,&player);
+			DrawBattle(sdlRenderer, &player, &currentBattle, &BattleSprites, numbers, UpperCaseFont);
 		};
-		//HelloWorld.Draw(sdlRenderer, frame, font);
 
 		SDL_RenderPresent(sdlRenderer);
 		keys.Reset();
@@ -138,7 +161,104 @@ void Shutdown(std::vector<Zone> Zones,Player *player)
 double LinearInterpolate(double y1,double y2,double mu)
 {
 	return(y1*(1-mu)+y2*mu);
-}
+};
+
+void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBattle, BattleScreen *_battleSprites, SDL_Texture* _number_sprites, SDL_Texture* UpperCaseFont)
+{
+	SDL_RenderCopy(sdlRenderer, _battleSprites->OpponentInfo,NULL,NULL);
+	int WidthOfHealthBar = (float)((float)( ( (float)_currentBattle->pokemon->CurrHP) / ( (float) _currentBattle->pokemon->MaxHP ) ) * 48);
+	SDL_Rect OpponentPokeHealthBar_Rect = {32, 20, WidthOfHealthBar, 2};
+	SDL_RenderCopy(sdlRenderer, _battleSprites->HPBar,NULL,&OpponentPokeHealthBar_Rect);
+	SDL_RenderCopy(sdlRenderer, _battleSprites->PlayerInfo,NULL,NULL);
+	WidthOfHealthBar = (float)((float)( ( (float)_player->party.Party[_player->ActivePokemon].CurrHP) / ( (float) _player->party.Party[_player->ActivePokemon].MaxHP ) ) * 48);
+	SDL_Rect PlayerPokeHealthBar_Rect = {96, 76, WidthOfHealthBar, 2};
+	SDL_RenderCopy(sdlRenderer, _battleSprites->HPBar,NULL,&PlayerPokeHealthBar_Rect);
+
+	
+	DrawStaticText(pokemon_names[_currentBattle->pokemon->Index], 8,0,sdlRenderer,UpperCaseFont);
+	DrawStaticText(pokemon_names[_player->party.Party[_player->ActivePokemon].Index], 80,56,sdlRenderer,UpperCaseFont);
+
+	DrawNumber(_player->party.Party[_player->ActivePokemon].CurrHP, 112, 81, _number_sprites, sdlRenderer, true);
+	DrawNumber(_player->party.Party[_player->ActivePokemon].MaxHP, 143, 81, _number_sprites, sdlRenderer, true);
+
+	DrawNumber(_player->party.Party[_player->ActivePokemon].Level, 120, 65, _number_sprites, sdlRenderer, false);
+	DrawNumber(_currentBattle->pokemon->Level, 40, 9, _number_sprites, sdlRenderer,false);
+
+	SDL_Rect PlayerPokeBackSprite_Rect = {8,40,64,64}; //104, 16
+	SDL_Rect OpponentPokeFrontSprite_Rect = {104,16,40,40}; //104, 16
+	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_BACK_SPRITES[_player->party.Poke1_index],NULL,&PlayerPokeBackSprite_Rect);
+	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon->Index],NULL,&OpponentPokeFrontSprite_Rect);
+	if(!_currentBattle->CurrentMenu)
+	{
+		SDL_RenderCopy(sdlRenderer, _battleSprites->Frame,NULL,NULL);
+
+		SDL_Rect Arrow_Rect;
+		Arrow_Rect.w = 7;
+		Arrow_Rect.h = 7;
+		switch (_currentBattle->SelectedMenuItem)
+		{
+			case 0:
+				Arrow_Rect.x = 72;
+				Arrow_Rect.y = 114;
+				break;
+			case 1:
+				Arrow_Rect.x = 120;
+				Arrow_Rect.y = 114;
+				break;
+			case 2:
+				Arrow_Rect.x = 72;
+				Arrow_Rect.y = 130;
+				break;
+			case 3:
+				Arrow_Rect.x = 120;
+				Arrow_Rect.y = 130;
+				break;
+			default:
+				Arrow_Rect.x = 72;
+				Arrow_Rect.y = 114;
+				break;
+		};
+		SDL_RenderCopy(sdlRenderer, _battleSprites->arrow,NULL,&Arrow_Rect);
+	}
+	else
+	{
+		if(_currentBattle->SelectedMenuItem == 0) // fight
+		{
+			SDL_RenderCopy(sdlRenderer, _battleSprites->Frame_Fight,NULL,NULL);
+			SDL_Rect Arrow_Rect;
+			Arrow_Rect.w = 7;
+			Arrow_Rect.h = 7;
+			switch (_currentBattle->SelectedAttack)
+			{
+				case 0:
+					Arrow_Rect.x = 40;
+					Arrow_Rect.y = 106;
+					break;
+				case 1:
+					Arrow_Rect.x = 40;
+					Arrow_Rect.y = 114;
+					break;
+				case 2:
+					Arrow_Rect.x = 40;
+					Arrow_Rect.y = 122;
+					break;
+				case 3:
+					Arrow_Rect.x = 40;
+					Arrow_Rect.y = 130;
+					break;
+				default:
+					Arrow_Rect.x = 40;
+					Arrow_Rect.y = 106;
+					break;
+			};
+			SDL_RenderCopy(sdlRenderer, _battleSprites->arrow,NULL,&Arrow_Rect);
+			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move1_index], 49,106,sdlRenderer,UpperCaseFont);
+			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move2_index], 49,114,sdlRenderer,UpperCaseFont);
+			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move3_index], 49,122,sdlRenderer,UpperCaseFont);
+			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move4_index], 49,130,sdlRenderer,UpperCaseFont);
+		};
+	};
+};
 
 void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport)
 {
@@ -190,4 +310,72 @@ void UpdateViewport(Viewport *viewport, Player *player)
 		player->m_moving = false;	
 	};
 	return;
+};
+
+void DrawNumber(unsigned char _number_to_draw, int x, int y, SDL_Texture* numbers, SDL_Renderer* sdlRenderer, bool _leftorright)
+{
+	if(!_leftorright)
+	{
+		if(_number_to_draw < 10)
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(_number_to_draw-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x,y,8,8};
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+		}
+		else if(_number_to_draw < 100)
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(floor(_number_to_draw/10)-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x,y,8,8};
+			SDL_Rect temp2_SRC_Rect = {8*((_number_to_draw%10)-1),0,8,8};
+			SDL_Rect temp2_DST_Rect = {x+8,y,8,8};
+			if(temp2_SRC_Rect.x == -8)
+				temp2_SRC_Rect.x = 8*9;
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
+		}
+		else 
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(floor(_number_to_draw/100)-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x,y,8,8};
+			SDL_Rect temp2_SRC_Rect = {8*((_number_to_draw%10)-1),0,8,8};
+			SDL_Rect temp2_DST_Rect = {x+8,y,8,8};
+			SDL_Rect temp3_SRC_Rect = {8*((_number_to_draw%100)-1),0,8,8};
+			SDL_Rect temp3_DST_Rect = {x+16,y,8,8};
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp3_SRC_Rect,&temp3_DST_Rect);
+		};
+	} 
+	else 
+	{
+		if(_number_to_draw < 10)
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(_number_to_draw-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x-8,y,8,8};
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+		}
+		else if(_number_to_draw < 100)
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(floor(_number_to_draw/10)-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x-16,y,8,8};
+			SDL_Rect temp2_SRC_Rect = {8*((_number_to_draw%10)-1),0,8,8};
+			SDL_Rect temp2_DST_Rect = {x-8,y,8,8};
+			if(temp2_SRC_Rect.x == -8)
+				temp2_SRC_Rect.x = 8*9;
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
+		}
+		else 
+		{
+			SDL_Rect temp1_SRC_Rect = {8*(floor(_number_to_draw/100)-1),0,8,8};
+			SDL_Rect temp1_DST_Rect = {x-24,y,8,8};
+			SDL_Rect temp2_SRC_Rect = {8*((_number_to_draw%10)-1),0,8,8};
+			SDL_Rect temp2_DST_Rect = {x-16,y,8,8};
+			SDL_Rect temp3_SRC_Rect = {8*((_number_to_draw%100)-1),0,8,8};
+			SDL_Rect temp3_DST_Rect = {x-8,y,8,8};
+			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
+			SDL_RenderCopy(sdlRenderer, numbers,&temp3_SRC_Rect,&temp3_DST_Rect);
+		};
+	};
 };

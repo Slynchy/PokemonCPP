@@ -4,6 +4,9 @@
 #include <SDL_image.h> // SDL Image library
 #include <SDL_ttf.h>
 
+#ifndef TEXT_H
+#define TEXT_H
+
 struct Message
 {
 	std::string message;
@@ -14,4 +17,6 @@ struct Message
 	void Create(std::string _message);
 };
 
-SDL_Texture* renderText(const std::string &message, const std::string &fontFile,SDL_Color color, int fontSize, SDL_Renderer *renderer);
+void DrawStaticText(std::string _text, int x, int y, SDL_Renderer* sdlRenderer, SDL_Texture* UpperCaseFont);
+
+#endif
