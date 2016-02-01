@@ -2,41 +2,69 @@
 //#include <SDL_image.h> // SDL Image library
 #include "PokeMath.h"
 #include "Player.h"
-#include "Trainer.h"
 #include "Pokemon.h"
+#include "PokeEngine.h"
 
 #ifndef BATTLE_H
 #define BATTLE_H
 
-enum PossibleActions
-{
-	UNDECIDED,
-	ATTACK,
-	ITEM,
-	RUN
-};
-
 class Battle
 {
+	private:
+		static Battle* currentBattle;
+		Pokemon PlayersActivePokemon; // an instance 
 	public:
+		enum Menus
+		{
+			UNDECIDED,
+			FIGHT,
+			PKMN,
+			ITEMS,
+			RUN, 
+			VICTORY
+		};
 		PokeParty *PlayerParty;
 		PokeParty OpponentParty;
 		Trainer *OpponentTrainer;
 		bool PlayersTurn;
-		PossibleActions ChosenAction;
-		Pokemon *pokemon;
+		//PossibleActions ChosenAction;
+		Pokemon pokemon; // an instance
 		signed char SelectedMenuItem;
 		signed char SelectedAttack;
-		signed char CurrentMenu;
+		Menus CurrentMenu;
+		signed char MenuDepth;
 		void CreateBattle(PokeParty*,Pokemon*);
 		void UpdateUIPosition(Keys*);
 		void Logic(Keys*, Player*);
 		void Battle::ResetUI();
+		short int Battle::GetPlayerHP();
+		short int Battle::GetOpponentHP();
+		Pokemon Battle::GetActivePokemon();
+		bool Battle::HasActivePokemonFainted();
+		bool Battle::HasOpponentActivePokemonFainted();
+		static void Battle::LowerAttackOfActivePokemon(int);
+		void Battle::RunAway(Player*);
+		void Battle::Shutdown(Player*);
+
+		void Battle::ExecuteMoveEffect(Pokemon*, Pokemon*, MOVE_EFFECTS);
+
+		static Battle* GetCurrentBattle()
+		{
+			return currentBattle;
+		};
+		static void SetCurrentBattle(Battle* _newBattle)
+		{
+			currentBattle = _newBattle;
+			return; 
+		};
+
+
 	//	void CreateBattle(PokeParty*,Trainer*);
 };
 
 struct BattleScreen
 {
+
 	SDL_Texture* OpponentInfo;
 	SDL_Texture* PlayerInfo;
 	SDL_Texture* Frame;
@@ -44,6 +72,7 @@ struct BattleScreen
 	SDL_Texture* HPBar;
 	SDL_Texture* arrow;
 	int Load(SDL_Renderer* );
+	void Shutdown();
 };
 
 

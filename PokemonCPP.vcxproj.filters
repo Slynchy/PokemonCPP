@@ -42,6 +42,12 @@
     <ClCompile Include="src\PokeMath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="headers\PokeEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MainMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\SDLFunctions.h">
@@ -68,10 +74,13 @@
     <ClInclude Include="headers\Battle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\Trainer.h">
+    <ClInclude Include="headers\PokeMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="headers\PokeMath.h">
+    <ClInclude Include="headers\PokeEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\MainMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

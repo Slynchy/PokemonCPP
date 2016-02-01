@@ -157,15 +157,15 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	spritesheet = IMG_LoadTexture(sdlRenderer, "player.png");
 	InBattle = false;
 	CanMove = true;
-	ActivePokemon = 0;
+	this->SetActivePokemon(0);
 
-	InitPokeParty(&party);
+	InitPokeParty(this->GetParty());
 	return;
 };
 
 bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos)
 {
-	if(Player::zoneIndex == -1) return false;
+	if(Player::zoneIndex == -1 || Player::zoneIndex > levelCollisionArray.size()) return false;
 	if(x_pos > (unsigned char)levelCollisionArray[Player::zoneIndex].objectData[0].size() || 
 		y_pos > (unsigned char)(levelCollisionArray[Player::zoneIndex].objectData.size()-1) ||
 		x_pos < 0 ||
@@ -179,7 +179,7 @@ bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, in
 
 	int zonePos_X = (x_pos - levelCollisionArray[Player::zoneIndex].world_x );
 	int zonePos_Y = (y_pos - levelCollisionArray[Player::zoneIndex].world_y );
-	if(zonePos_X < 0 || zonePos_Y < 0 || zonePos_X > levelCollisionArray[Player::zoneIndex].x_size || zonePos_Y > levelCollisionArray[Player::zoneIndex].y_size)
+	if(zonePos_X < 0 || zonePos_Y < 0 || zonePos_X > levelCollisionArray[Player::zoneIndex].x_size || zonePos_Y > levelCollisionArray[Player::zoneIndex].y_size-1)
 	{
 		return false;
 	};

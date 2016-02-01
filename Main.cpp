@@ -3,9 +3,13 @@
 #include "src/SDLFunctions.h"
 #include "Player.h"
 #include "Battle.h"
+#include "MainMenu.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <chrono>
+#include <random>
 
 #define FPS 60
 
@@ -22,15 +26,25 @@ struct Viewport
 	int m_y;
 };
 
-void Shutdown(std::vector<Zone> Zones,Player *player);
+enum GameStates
+{
+	MAIN_MENU,
+	INGAME
+};
+
+void Shutdown(std::vector<Zone>,Player *, BattleScreen *);
 void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
 void DrawBattle(SDL_Renderer*, Player*, Battle*,BattleScreen*, SDL_Texture*, SDL_Texture*);
-double LinearInterpolate(double y1,double y2,double mu);
 void UpdateViewport(Viewport *viewport, Player *player);
 void DrawNumber(unsigned char, int, int, SDL_Texture*, SDL_Renderer*, bool);
 
 int main(int argc, char* argv[]) 
 {
+	srand(time(NULL));
+
+	GameStates GAMESTATE = MAIN_MENU;
+
+	bool ANY_KEY_PRESSED = false;
 
 	Objects WorldObjects[5];
 	WorldObjects[0].Init("Empty Collision Space", true);
@@ -49,11 +63,12 @@ int main(int argc, char* argv[])
 	SDL_RenderSetLogicalSize(sdlRenderer, screenW, screenH);
 	const Uint8 *keyboardstate;
 
-	//const char* MoveNames[164];
-	//MoveNames = InitializeMoveNames();
+	MainMenu* mainMenu = new MainMenu;
+	if(mainMenu->Load(sdlRenderer) == -1)
+		return -1;
 
-	Player player;
-	player.Init(sdlRenderer);
+	Player* player = new Player;
+	player->Init(sdlRenderer);
 	Keys keys;
 	keys.Init();
 	if(LoadPokemonFrontSprites(sdlRenderer,&LoadedPokemonSprites) == -1 || LoadPokemonBackSprites(sdlRenderer,&LoadedPokemonSprites) == -1)
@@ -62,8 +77,8 @@ int main(int argc, char* argv[])
 	};
 
 	Viewport viewport;
-	viewport.m_x = (8 + (16 * player.m_x));
-	viewport.m_y = (8 + (16 * player.m_y));
+	viewport.m_x = (8 + (16 * player->m_x));
+	viewport.m_y = (8 + (16 * player->m_y));
 
 	std::vector<Zone> CURR_ZONES;
 	Zone area_PalletTown;
@@ -76,19 +91,15 @@ int main(int argc, char* argv[])
 	SDL_Texture* numbers = IMG_LoadTexture(sdlRenderer, "numbers.png");
 	SDL_Texture* UpperCaseFont = IMG_LoadTexture(sdlRenderer, "UpperCaseFont.png");
 
-	Message HelloWorld;
-	HelloWorld.Create("OAK: Its dangerous to go alone! Take this!");
-	SDL_Texture *frame = IMG_LoadTexture(sdlRenderer, "text-frame.png");
+	Pokemon opponent;
+	Pokemon playerpoke = CreatePokemon((POKEMON_IDS)(81));
+	PokeEngine::LevelUpBy(&playerpoke, 24);
+	player->GetParty()->InsertPokemon(&playerpoke);
+	//player.party.Party[0].Level = 25;
 
-	Pokemon opponent = CreatePokemon(BULBASAUR);
-	Pokemon playerpoke = CreatePokemon(BULBASAUR);
-	player.party.InsertPokemon(&playerpoke);
-	player.party.Party[0].Level = 25;
-
-	Battle currentBattle;
-	currentBattle.CreateBattle(&player.party, &opponent);
-	BattleScreen BattleSprites;
-	if(BattleSprites.Load(sdlRenderer) == -1)
+	Battle* currentBattle;
+	BattleScreen* BattleSprites = new BattleScreen;
+	if(BattleSprites->Load(sdlRenderer) == -1)
 	{
 		return -1;	
 	};
@@ -103,7 +114,9 @@ int main(int argc, char* argv[])
 				case SDL_QUIT:
 					quit = true;
 					break;
-
+				case SDL_KEYDOWN:
+					ANY_KEY_PRESSED = true;
+					break;
 				default:
 					break;
 			}
@@ -115,80 +128,99 @@ int main(int argc, char* argv[])
 		};
 		if(keyboardstate[SDL_SCANCODE_SPACE])
 		{
-			player.InBattle = true;
+			player->SetInBattle(true);
+			opponent = CreatePokemon((POKEMON_IDS)rand()%150);
+			currentBattle = new Battle;
+			currentBattle->CreateBattle(player->GetParty(), &opponent);
 		};
 		keys.Timer++;
-		if(keys.Timer >= 15 || player.InBattle == false)
+		if(keys.Timer >= 15 || player->GetInBattle() == false)
 		{
 			keys.Update(keyboardstate);
 		};
-
 		SDL_SetRenderDrawColor(sdlRenderer, 255, 255, 255, 255);
 		SDL_RenderClear(sdlRenderer);	
-		if(player.InBattle == false)
+		switch (GAMESTATE)
 		{
-			UpdateViewport(&viewport,&player);
-			player.zoneIndex = CheckZone(CURR_ZONES,player.m_x,player.m_y);
-			player.KeyboardInput(&keys,CURR_ZONES);
-			DrawOverworld(sdlRenderer,CURR_ZONES,screenW,screenH, &player, &viewport);
-		}
-		else 
-		{
-			currentBattle.Logic(&keys,&player);
-			DrawBattle(sdlRenderer, &player, &currentBattle, &BattleSprites, numbers, UpperCaseFont);
+			case MAIN_MENU:
+				mainMenu->Draw(sdlRenderer);
+				if(ANY_KEY_PRESSED == true)
+					GAMESTATE = INGAME;
+				break;
+			case INGAME:
+				if(player->GetInBattle() == false)
+				{
+					UpdateViewport(&viewport,player);
+					player->zoneIndex = CheckZone(CURR_ZONES,player->m_x,player->m_y);
+					player->KeyboardInput(&keys,CURR_ZONES);
+					DrawOverworld(sdlRenderer,CURR_ZONES,screenW,screenH, player, &viewport);
+				}
+				else 
+				{
+					currentBattle->Logic(&keys,player);
+					if(player->GetInBattle() == true)
+					{
+						DrawBattle(sdlRenderer, player, currentBattle, BattleSprites, numbers, UpperCaseFont);
+					};
+				};
+				break;
+			default:
+				break;
 		};
-
 		SDL_RenderPresent(sdlRenderer);
 		keys.Reset();
+		ANY_KEY_PRESSED = false;
 		SDL_Delay(1000/FPS);
 	};
 
-	Shutdown(CURR_ZONES,&player);
+	Shutdown(CURR_ZONES,player,BattleSprites);
     return 0;
 }
 
-void Shutdown(std::vector<Zone> Zones,Player *player)
+void Shutdown(std::vector<Zone> Zones,Player *player, BattleScreen *BattleSprites)
 {
 	for(int i = 0; i < (unsigned char)Zones.size(); i++)
 	{
 		SDL_DestroyTexture(Zones[i].image);
 	};
+	//Zones._Destroy();
 	SDL_DestroyTexture(player->spritesheet);
+	BattleSprites->Shutdown();
 	Zones.clear();
+	delete player;
+	//SDL_DestroyRenderer(sdlRenderer);
+    //SDL_DestroyWindow(screen);
 	ShutdownSDL();
-};
-
-double LinearInterpolate(double y1,double y2,double mu)
-{
-	return(y1*(1-mu)+y2*mu);
 };
 
 void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBattle, BattleScreen *_battleSprites, SDL_Texture* _number_sprites, SDL_Texture* UpperCaseFont)
 {
 	SDL_RenderCopy(sdlRenderer, _battleSprites->OpponentInfo,NULL,NULL);
-	int WidthOfHealthBar = (float)((float)( ( (float)_currentBattle->pokemon->CurrHP) / ( (float) _currentBattle->pokemon->MaxHP ) ) * 48);
+	int WidthOfHealthBar = (float)((float)( ( (float)_currentBattle->pokemon.CurrHP) / ( (float) _currentBattle->pokemon.MaxHP ) ) * 48);
 	SDL_Rect OpponentPokeHealthBar_Rect = {32, 20, WidthOfHealthBar, 2};
 	SDL_RenderCopy(sdlRenderer, _battleSprites->HPBar,NULL,&OpponentPokeHealthBar_Rect);
 	SDL_RenderCopy(sdlRenderer, _battleSprites->PlayerInfo,NULL,NULL);
-	WidthOfHealthBar = (float)((float)( ( (float)_player->party.Party[_player->ActivePokemon].CurrHP) / ( (float) _player->party.Party[_player->ActivePokemon].MaxHP ) ) * 48);
+	WidthOfHealthBar = (float)((float)( ( (float)_currentBattle->GetActivePokemon().CurrHP) / ( (float)_currentBattle->GetActivePokemon().MaxHP ) ) * 48);
 	SDL_Rect PlayerPokeHealthBar_Rect = {96, 76, WidthOfHealthBar, 2};
 	SDL_RenderCopy(sdlRenderer, _battleSprites->HPBar,NULL,&PlayerPokeHealthBar_Rect);
 
 	
-	DrawStaticText(pokemon_names[_currentBattle->pokemon->Index], 8,0,sdlRenderer,UpperCaseFont);
-	DrawStaticText(pokemon_names[_player->party.Party[_player->ActivePokemon].Index], 80,56,sdlRenderer,UpperCaseFont);
+	DrawStaticText(pokemon_names[_currentBattle->pokemon.Index], 8,0,sdlRenderer,UpperCaseFont);
+	DrawStaticText(pokemon_names[_currentBattle->GetActivePokemon().Index], 80,56,sdlRenderer,UpperCaseFont);
 
-	DrawNumber(_player->party.Party[_player->ActivePokemon].CurrHP, 112, 81, _number_sprites, sdlRenderer, true);
-	DrawNumber(_player->party.Party[_player->ActivePokemon].MaxHP, 143, 81, _number_sprites, sdlRenderer, true);
+	DrawNumber(_currentBattle->GetActivePokemon().CurrHP, 112, 81, _number_sprites, sdlRenderer, true);
+	DrawNumber(_currentBattle->GetActivePokemon().MaxHP, 143, 81, _number_sprites, sdlRenderer, true);
 
-	DrawNumber(_player->party.Party[_player->ActivePokemon].Level, 120, 65, _number_sprites, sdlRenderer, false);
-	DrawNumber(_currentBattle->pokemon->Level, 40, 9, _number_sprites, sdlRenderer,false);
+	DrawNumber(_currentBattle->GetActivePokemon().Level, 120, 65, _number_sprites, sdlRenderer, false);
+	DrawNumber(_currentBattle->pokemon.Level, 40, 9, _number_sprites, sdlRenderer,false);
 
 	SDL_Rect PlayerPokeBackSprite_Rect = {8,40,64,64}; //104, 16
-	SDL_Rect OpponentPokeFrontSprite_Rect = {104,16,40,40}; //104, 16
-	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_BACK_SPRITES[_player->party.Poke1_index],NULL,&PlayerPokeBackSprite_Rect);
-	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon->Index],NULL,&OpponentPokeFrontSprite_Rect);
-	if(!_currentBattle->CurrentMenu)
+	int w, h;
+	SDL_QueryTexture(LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon.Index], NULL, NULL, &w, &h);
+	SDL_Rect OpponentPokeFrontSprite_Rect = {104,16,w,h}; //104, 16
+	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_BACK_SPRITES[_currentBattle->GetActivePokemon().Index],NULL,&PlayerPokeBackSprite_Rect);
+	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon.Index],NULL,&OpponentPokeFrontSprite_Rect);
+	if(_currentBattle->MenuDepth <= 0)
 	{
 		SDL_RenderCopy(sdlRenderer, _battleSprites->Frame,NULL,NULL);
 
@@ -222,7 +254,7 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 	}
 	else
 	{
-		if(_currentBattle->SelectedMenuItem == 0) // fight
+		if(_currentBattle->SelectedMenuItem == 0 && _currentBattle->MenuDepth > 0) // fight
 		{
 			SDL_RenderCopy(sdlRenderer, _battleSprites->Frame_Fight,NULL,NULL);
 			SDL_Rect Arrow_Rect;
@@ -252,10 +284,12 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 					break;
 			};
 			SDL_RenderCopy(sdlRenderer, _battleSprites->arrow,NULL,&Arrow_Rect);
-			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move1_index], 49,106,sdlRenderer,UpperCaseFont);
-			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move2_index], 49,114,sdlRenderer,UpperCaseFont);
-			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move3_index], 49,122,sdlRenderer,UpperCaseFont);
-			DrawStaticText(MoveNames[_player->party.Party[_player->ActivePokemon].Move4_index], 49,130,sdlRenderer,UpperCaseFont);
+			for(int i = 0; i < 4; i++)
+			{
+				DrawStaticText(MoveNames[_currentBattle->GetActivePokemon().MoveSet[i].Index], 49,106+(i*8),sdlRenderer,UpperCaseFont);
+			};
+			DrawNumber(_currentBattle->GetActivePokemon().MoveSet[_currentBattle->SelectedAttack].PP, 56,90, _number_sprites,sdlRenderer, true );
+			DrawNumber(MOVES_ARRAY[_currentBattle->GetActivePokemon().MoveSet[_currentBattle->SelectedAttack].Index].PP, 64,90, _number_sprites,sdlRenderer, false );
 		};
 	};
 };
@@ -290,23 +324,30 @@ void UpdateViewport(Viewport *viewport, Player *player)
 	{
 		if(player->direction == RIGHT)
 		{
-			viewport->m_x = (int)ceil(LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
+			viewport->m_x = (int)ceil(PokeMath::LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
 		} else {//if(player.direction == LEFT) {
-			viewport->m_x = (int)floor(LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
+			viewport->m_x = (int)floor(PokeMath::LinearInterpolate(viewport->m_x,(int)(8 + (16 * player->m_x)),VIEWPORT_MOVEMENT_SPEED));
 		};
 	};
 	if(viewport->m_y != (8 + (16 * player->m_y)))
 	{
 		if(player->direction == DOWN)
 		{
-			viewport->m_y = (int)ceil(LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
+			viewport->m_y = (int)ceil(PokeMath::LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
 		} else {//if(player.direction == UP) {
-			viewport->m_y = (int)floor(LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
+			viewport->m_y = (int)floor(PokeMath::LinearInterpolate(viewport->m_y,(int)(8 + (16 * player->m_y)),VIEWPORT_MOVEMENT_SPEED));
 		};
 	};
 	if(viewport->m_x == (8 + (16 * player->m_x)) && viewport->m_y == (8 + (16 * player->m_y)))
 	{
 		// init pokebattle here
+		/*if((rand() % 100) > 70)
+		{
+			player->SetInBattle(true);
+			Pokemon opponent = CreatePokemon((POKEMON_IDS)rand()%150);
+			Battle currentBattle = new Battle;
+			currentBattle->CreateBattle(player->GetParty(), &opponent);
+		};*/
 		player->m_moving = false;	
 	};
 	return;
@@ -341,6 +382,10 @@ void DrawNumber(unsigned char _number_to_draw, int x, int y, SDL_Texture* number
 			SDL_Rect temp2_DST_Rect = {x+8,y,8,8};
 			SDL_Rect temp3_SRC_Rect = {8*((_number_to_draw%100)-1),0,8,8};
 			SDL_Rect temp3_DST_Rect = {x+16,y,8,8};
+			if(temp2_SRC_Rect.x == -8)
+				temp2_SRC_Rect.x = 8*9;
+			if(temp3_SRC_Rect.x == -8)
+				temp3_SRC_Rect.x = 8*9;
 			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
 			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
 			SDL_RenderCopy(sdlRenderer, numbers,&temp3_SRC_Rect,&temp3_DST_Rect);
@@ -373,6 +418,10 @@ void DrawNumber(unsigned char _number_to_draw, int x, int y, SDL_Texture* number
 			SDL_Rect temp2_DST_Rect = {x-16,y,8,8};
 			SDL_Rect temp3_SRC_Rect = {8*((_number_to_draw%100)-1),0,8,8};
 			SDL_Rect temp3_DST_Rect = {x-8,y,8,8};
+			if(temp2_SRC_Rect.x == -8)
+				temp2_SRC_Rect.x = 8*9;
+			if(temp3_SRC_Rect.x == -8)
+				temp3_SRC_Rect.x = 8*9;
 			SDL_RenderCopy(sdlRenderer, numbers,&temp1_SRC_Rect,&temp1_DST_Rect);
 			SDL_RenderCopy(sdlRenderer, numbers,&temp2_SRC_Rect,&temp2_DST_Rect);
 			SDL_RenderCopy(sdlRenderer, numbers,&temp3_SRC_Rect,&temp3_DST_Rect);
