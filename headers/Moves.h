@@ -3,6 +3,18 @@
 #ifndef MOVES_H
 #define MOVES_H
 
+static const std::string StatusConditionStrings[6] = {"","SLP","PSN","BRN","FRZ","PRZ"};
+
+enum STATUS_COND
+{
+	NONE,
+	ASLEEP,
+	POISON_COND,
+	BURNED,
+	FROZEN,
+	PARALYZED
+};
+
 enum TYPES 
 {
 	NORMAL , 

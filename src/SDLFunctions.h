@@ -1,3 +1,5 @@
+#pragma once
+
 #include "SDL.h" // Main SDL library
 #include <SDL_image.h> // SDL Image library
 

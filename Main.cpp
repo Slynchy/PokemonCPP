@@ -35,13 +35,13 @@ enum GameStates
 void Shutdown(std::vector<Zone>,Player *, BattleScreen *);
 void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
 void DrawBattle(SDL_Renderer*, Player*, Battle*,BattleScreen*, SDL_Texture*, SDL_Texture*);
-void UpdateViewport(Viewport *viewport, Player *player);
+void UpdateViewport(Viewport *viewport, Player *player, Battle * _currentBattle);
 void DrawNumber(unsigned char, int, int, SDL_Texture*, SDL_Renderer*, bool);
 
 int main(int argc, char* argv[]) 
 {
 	srand(time(NULL));
-
+	std::cout << "Size of Pokemon data structure (target is 43b): " << sizeof(Pokemon) << std::endl;
 	GameStates GAMESTATE = MAIN_MENU;
 
 	bool ANY_KEY_PRESSED = false;
@@ -81,12 +81,9 @@ int main(int argc, char* argv[])
 	viewport.m_y = (8 + (16 * player->m_y));
 
 	std::vector<Zone> CURR_ZONES;
-	Zone area_PalletTown;
-	Zone area_Route1;
-	CURR_ZONES.push_back(area_PalletTown);
-	CURR_ZONES.push_back(area_Route1);
-	CURR_ZONES[0].Init("pallet.png",sdlRenderer,"pallet.bin");
-	CURR_ZONES[1].Init("route1.png",sdlRenderer,"route1.bin");
+	Zone area_indigo;
+	CURR_ZONES.push_back(area_indigo);
+	CURR_ZONES[0].Init("indigoplateau.png",sdlRenderer,"indigoplateau.bin");
 
 	SDL_Texture* numbers = IMG_LoadTexture(sdlRenderer, "numbers.png");
 	SDL_Texture* UpperCaseFont = IMG_LoadTexture(sdlRenderer, "UpperCaseFont.png");
@@ -94,8 +91,8 @@ int main(int argc, char* argv[])
 	Pokemon opponent;
 	Pokemon playerpoke = CreatePokemon((POKEMON_IDS)(81));
 	PokeEngine::LevelUpBy(&playerpoke, 24);
+	//playerpoke.StatusCond = POISON_COND;
 	player->GetParty()->InsertPokemon(&playerpoke);
-	//player.party.Party[0].Level = 25;
 
 	Battle* currentBattle;
 	BattleScreen* BattleSprites = new BattleScreen;
@@ -129,9 +126,8 @@ int main(int argc, char* argv[])
 		if(keyboardstate[SDL_SCANCODE_SPACE])
 		{
 			player->SetInBattle(true);
-			opponent = CreatePokemon((POKEMON_IDS)rand()%150);
-			currentBattle = new Battle;
-			currentBattle->CreateBattle(player->GetParty(), &opponent);
+		//	opponent = CreatePokemon((POKEMON_IDS)rand()%150);
+			currentBattle = new Battle(player->GetParty(), new PokeParty(&CreatePokemon((POKEMON_IDS)(81)),&CreatePokemon((POKEMON_IDS)(81))));
 		};
 		keys.Timer++;
 		if(keys.Timer >= 15 || player->GetInBattle() == false)
@@ -143,17 +139,27 @@ int main(int argc, char* argv[])
 		switch (GAMESTATE)
 		{
 			case MAIN_MENU:
-				mainMenu->Draw(sdlRenderer);
+				mainMenu->Draw(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES);
 				if(ANY_KEY_PRESSED == true)
+				{
 					GAMESTATE = INGAME;
+					delete mainMenu;
+				};
 				break;
 			case INGAME:
 				if(player->GetInBattle() == false)
 				{
-					UpdateViewport(&viewport,player);
+					UpdateViewport(&viewport, player, currentBattle);
 					player->zoneIndex = CheckZone(CURR_ZONES,player->m_x,player->m_y);
 					player->KeyboardInput(&keys,CURR_ZONES);
 					DrawOverworld(sdlRenderer,CURR_ZONES,screenW,screenH, player, &viewport);
+					if(player->IsBattleScheduled())
+					{
+						player->SetInBattle(true);
+						opponent = CreatePokemon((POKEMON_IDS)rand()%150);
+						currentBattle = new Battle(player->GetParty(), opponent);
+						player->SetIsBattleScheduled(false);
+					};
 				}
 				else 
 				{
@@ -211,13 +217,18 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 	DrawNumber(_currentBattle->GetActivePokemon().CurrHP, 112, 81, _number_sprites, sdlRenderer, true);
 	DrawNumber(_currentBattle->GetActivePokemon().MaxHP, 143, 81, _number_sprites, sdlRenderer, true);
 
-	DrawNumber(_currentBattle->GetActivePokemon().Level, 120, 65, _number_sprites, sdlRenderer, false);
+	if(_currentBattle->GetActivePokemon().StatusCond == NONE)
+	{
+		DrawNumber(_currentBattle->GetActivePokemon().Level, 120, 65, _number_sprites, sdlRenderer, false);
+	} else {
+		DrawStaticText(StatusConditionStrings[_currentBattle->GetActivePokemon().StatusCond], 120,65,sdlRenderer,UpperCaseFont);
+	};
 	DrawNumber(_currentBattle->pokemon.Level, 40, 9, _number_sprites, sdlRenderer,false);
 
 	SDL_Rect PlayerPokeBackSprite_Rect = {8,40,64,64}; //104, 16
 	int w, h;
 	SDL_QueryTexture(LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon.Index], NULL, NULL, &w, &h);
-	SDL_Rect OpponentPokeFrontSprite_Rect = {104,16,w,h}; //104, 16
+	SDL_Rect OpponentPokeFrontSprite_Rect = {104,0,w,h}; //104, 16
 	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_BACK_SPRITES[_currentBattle->GetActivePokemon().Index],NULL,&PlayerPokeBackSprite_Rect);
 	SDL_RenderCopy(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES[_currentBattle->pokemon.Index],NULL,&OpponentPokeFrontSprite_Rect);
 	if(_currentBattle->MenuDepth <= 0)
@@ -318,7 +329,7 @@ void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,in
 	player->Draw(sdlRenderer);
 };
 
-void UpdateViewport(Viewport *viewport, Player *player)
+void UpdateViewport(Viewport *viewport, Player *player, Battle * _currentBattle)
 {
 	if(viewport->m_x != (8 + (16 * player->m_x)))
 	{
@@ -341,12 +352,14 @@ void UpdateViewport(Viewport *viewport, Player *player)
 	if(viewport->m_x == (8 + (16 * player->m_x)) && viewport->m_y == (8 + (16 * player->m_y)))
 	{
 		// init pokebattle here
-		/*if((rand() % 100) > 70)
+		/*if(player->m_moving == true)
 		{
-			player->SetInBattle(true);
-			Pokemon opponent = CreatePokemon((POKEMON_IDS)rand()%150);
-			Battle currentBattle = new Battle;
-			currentBattle->CreateBattle(player->GetParty(), &opponent);
+			int tempRand = (rand()%100);
+			std::cout << tempRand << std::endl;
+			if(tempRand > 90)
+			{
+				player->SetIsBattleScheduled(true);
+			};
 		};*/
 		player->m_moving = false;	
 	};

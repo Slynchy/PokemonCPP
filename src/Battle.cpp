@@ -1,14 +1,10 @@
 #include "Battle.h"
 
-void Battle::CreateBattle(PokeParty* _PlayerParty, Pokemon* _OpponentPokemon)
+void Battle::Reset()
 {
-	Battle::PlayerParty = _PlayerParty;
-	Battle::PlayersActivePokemon = _PlayerParty->Party[0];
-	Battle::pokemon = *_OpponentPokemon;
+	Battle::ResetUI();
+	Battle::PlayerParty = NULL;
 	Battle::SelectedMenuItem = 0;
-	Battle::CurrentMenu = UNDECIDED;
-	Battle::MenuDepth = 0;
-	Battle::SelectedAttack = 0;
 	Battle::PlayersTurn = true;
 	return;
 };
@@ -30,7 +26,14 @@ void Battle::RunAway(Player* _player)
 
 void Battle::Shutdown(Player* _player)
 {
-	_player->GetParty()->Party[0] = Battle::PlayersActivePokemon;
+	//_player->GetParty()->Party[0] = Battle::PlayersActivePokemon;
+	_player->GetParty()->Party[0].StatusCond = Battle::PlayersActivePokemon.StatusCond;
+	_player->GetParty()->Party[0].CurrHP = Battle::PlayersActivePokemon.CurrHP;
+	_player->GetParty()->Party[0].MoveSet[0].PP = Battle::PlayersActivePokemon.MoveSet[0].PP;
+	_player->GetParty()->Party[0].MoveSet[1].PP = Battle::PlayersActivePokemon.MoveSet[1].PP;
+	_player->GetParty()->Party[0].MoveSet[2].PP = Battle::PlayersActivePokemon.MoveSet[2].PP;
+	_player->GetParty()->Party[0].MoveSet[3].PP = Battle::PlayersActivePokemon.MoveSet[3].PP;
+
 	_player->SetInBattle(false);
 	delete this;
 	return;
@@ -56,7 +59,15 @@ void Battle::Logic(Keys* _keys, Player* _player)
 		}
 		else
 		{
-			Battle::Shutdown(_player);
+			if(Battle::isTrainer && opponentActivePkmn < (OpponentParty->Party.size()-1))
+			{
+				Battle::pokemon = OpponentParty->Party[++opponentActivePkmn];
+				Battle::PlayersTurn = true;
+				Battle::ResetUI();
+				return;
+			} else {
+				Battle::Shutdown(_player);
+			};
 		};
 	}
 	else if(CurrentMenu == UNDECIDED)
@@ -97,12 +108,6 @@ void Battle::Logic(Keys* _keys, Player* _player)
 	return;
 };
 
-void Battle::LowerAttackOfActivePokemon(int _amount)
-{
-//	Battle::GetActivePokemon()->Attack--;
-	return;
-};
-
 void Battle::ExecuteMoveEffect(Pokemon* _target, Pokemon* _attacker,MOVE_EFFECTS _moveEffect)
 {
 	switch(_moveEffect)
@@ -113,7 +118,7 @@ void Battle::ExecuteMoveEffect(Pokemon* _target, Pokemon* _attacker,MOVE_EFFECTS
 			_target->Attack = (int)(_target->Attack * 0.66);
 			break;
 		case ATTACK_UP1_EFFECT:
-			_attacker->Attack = (int)(_attacker->Attack * 1.50);;
+			_attacker->Attack = (int)(_attacker->Attack * 1.50);
 			break;
 		default:
 			break;

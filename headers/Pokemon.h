@@ -365,7 +365,7 @@ struct Pokemon
 	unsigned char Index;
 	short int CurrHP;
 	unsigned char LevelPC; // UNUSED?
-	unsigned char StatusCond;
+	STATUS_COND StatusCond;
 	unsigned char Type1;
 	unsigned char Type2;
 	unsigned char CatchRate_HeldItem;

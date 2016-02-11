@@ -37,6 +37,16 @@ struct PokeParty
 		Party.push_back(*_pokemon);	
 		return;
 	};
+	PokeParty()
+	{
+		//blanky-wanky-woo
+	};
+	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2)
+	{
+		//blanky-wanky-woo
+		Party.push_back(*_pokemon);	
+		Party.push_back(*_pokemon2);	
+	};
 };
 
 void InitPokeParty(PokeParty *party);
@@ -68,6 +78,7 @@ class Player: public Trainer
 {
 	private:
 		bool InBattle;
+		bool m_willBattle;
 
 	public:
 		int m_x;
@@ -99,6 +110,16 @@ class Player: public Trainer
 		bool GetInBattle()
 		{
 			return InBattle;
+		};
+
+		void SetIsBattleScheduled(bool _param)
+		{
+			m_willBattle = _param;
+			return;
+		};
+		bool IsBattleScheduled()
+		{
+			return m_willBattle;
 		};
 
 };

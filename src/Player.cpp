@@ -159,6 +159,9 @@ void Player::Init(SDL_Renderer *sdlRenderer)
 	CanMove = true;
 	this->SetActivePokemon(0);
 
+	SetInBattle(false);
+	m_willBattle = false;
+
 	InitPokeParty(this->GetParty());
 	return;
 };

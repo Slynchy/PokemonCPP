@@ -5,7 +5,7 @@ void InitPokemon(Pokemon *pokemon)
 	pokemon->Index = 0;
 	pokemon->CurrHP = 0;
 	pokemon->LevelPC = 0;
-	pokemon->StatusCond = 0;
+	pokemon->StatusCond = NONE;
 	pokemon->Type1 = 0;
 	pokemon->Type2 = 0;
 	pokemon->CatchRate_HeldItem = 0;
@@ -41,7 +41,7 @@ Pokemon CreatePokemon(unsigned char Index)
 	pokemon.Level = 1;
 	pokemon.CurrHP = PokeMath::CalculateStat(PokeMath::MAXHP, POKEDEX_REFERENCE[Index].BaseHP, pokemon.Level);
 	pokemon.LevelPC = 1;
-	pokemon.StatusCond = 0;
+	pokemon.StatusCond = NONE;
 	pokemon.Type1 = POKEDEX_REFERENCE[Index].Type1;
 	pokemon.Type2 = POKEDEX_REFERENCE[Index].Type2;
 	pokemon.CatchRate_HeldItem = POKEDEX_REFERENCE[0].CatchRate;
@@ -74,7 +74,7 @@ Pokemon CreatePokemon(unsigned char Index,unsigned char _Move1_index,unsigned ch
 	Pokemon pokemon;
 	pokemon.Index = Index; 
 	pokemon.LevelPC = 1;
-	pokemon.StatusCond = 0;
+	pokemon.StatusCond = NONE;
 	pokemon.Type1 = POKEDEX_REFERENCE[Index].Type1;
 	pokemon.Type2 = POKEDEX_REFERENCE[Index].Type2;
 	pokemon.CatchRate_HeldItem = POKEDEX_REFERENCE[0].CatchRate;
