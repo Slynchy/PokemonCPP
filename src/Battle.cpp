@@ -34,6 +34,25 @@ void Battle::Shutdown(Player* _player)
 	_player->GetParty()->Party[0].MoveSet[2].PP = Battle::PlayersActivePokemon.MoveSet[2].PP;
 	_player->GetParty()->Party[0].MoveSet[3].PP = Battle::PlayersActivePokemon.MoveSet[3].PP;
 
+	if(Battle::isTrainer == true)
+	{
+		switch(_player->currentOpponentID)
+		{
+			case 1:
+				_player->beatTrainer1 = true;
+				break;
+			case 2:
+				_player->beatTrainer2 = true;
+				break;
+			case 3:
+				_player->beatTrainer3 = true;
+				break;
+			default:
+				break;
+		};
+		_player->currentOpponentID = 0;
+	};
+
 	_player->SetInBattle(false);
 	delete this;
 	return;
@@ -77,12 +96,13 @@ void Battle::Logic(Keys* _keys, Player* _player)
 			Battle::UpdateUIPosition(_keys);
 			if(CurrentMenu == FIGHT)
 			{
-				PokeEngine::ApplyDamage(&pokemon, PokeMath::CalculateDamage(Battle::GetActivePokemon().Level,
+				int tempDamage = PokeMath::CalculateDamage(Battle::GetActivePokemon().Level,
 														Battle::GetActivePokemon().Attack,
 														pokemon.Defence,
 														MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Power,
-														1)); 
-				Battle::ExecuteMoveEffect(&pokemon, &PlayersActivePokemon, MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Effect);
+														1);
+				PokeEngine::ApplyDamage(&pokemon, tempDamage); 
+				Battle::ExecuteMoveEffect(&pokemon, &PlayersActivePokemon, MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Effect,tempDamage);
 				--PlayersActivePokemon.MoveSet[SelectedAttack].PP;
 				Battle::PlayersTurn = false;
 				Battle::ResetUI();
@@ -94,12 +114,13 @@ void Battle::Logic(Keys* _keys, Player* _player)
 		}
 		else
 		{
-			PokeEngine::ApplyDamage(&PlayersActivePokemon, PokeMath::CalculateDamage(pokemon.Level,
+			int tempDamage = PokeMath::CalculateDamage(pokemon.Level,
 																					pokemon.Attack,
 																					Battle::GetActivePokemon().Defence,
 																					MOVES_ARRAY[pokemon.MoveSet[0].Index].Power,
-																					1)); 
-			Battle::ExecuteMoveEffect(&PlayersActivePokemon,&pokemon, MOVES_ARRAY[pokemon.MoveSet[0].Index].Effect);
+																					1);
+			PokeEngine::ApplyDamage(&PlayersActivePokemon, tempDamage); 
+			Battle::ExecuteMoveEffect(&PlayersActivePokemon,&pokemon, MOVES_ARRAY[pokemon.MoveSet[0].Index].Effect,tempDamage);
 			Battle::PlayersTurn = true;
 			//ChosenAction = UNDECIDED;
 		};
@@ -108,11 +129,24 @@ void Battle::Logic(Keys* _keys, Player* _player)
 	return;
 };
 
-void Battle::ExecuteMoveEffect(Pokemon* _target, Pokemon* _attacker,MOVE_EFFECTS _moveEffect)
+void Battle::ExecuteMoveEffect(Pokemon* _target, Pokemon* _attacker,MOVE_EFFECTS _moveEffect, int _damage)
 {
 	switch(_moveEffect)
 	{
 		case NO_ADDITIONAL_EFFECT:
+			break;
+		case DRAIN_HP_EFFECT:
+			_attacker->CurrHP += (_damage/2);
+			if(_attacker->CurrHP > _attacker->MaxHP)
+			{
+				_attacker->CurrHP = _attacker->MaxHP;
+			};
+			break;
+		case POISON_SIDE_EFFECT1:
+			if(rand()%100 < 30)
+			{
+				_target->StatusCond = POISON_COND;
+			};
 			break;
 		case ATTACK_DOWN1_EFFECT:
 			_target->Attack = (int)(_target->Attack * 0.66);

@@ -115,6 +115,7 @@ int LoadPokemonFrontSprites(SDL_Renderer* sdlRenderer, LoadedPokeSprites* _loade
 		//if(!POKEDEX_REFERENCE->DexNum && i != 0)
 		//	break;
 		tempString = tempString.insert (0, "frontsprites/");
+		std::cout << "Loading " << tempString << std::endl;
 		_loadedsprites->POKEMON_FRONT_SPRITES.push_back(IMG_LoadTexture(sdlRenderer, tempString.c_str()));
 		if(!_loadedsprites->POKEMON_FRONT_SPRITES[i])
 			//anus
@@ -134,11 +135,58 @@ int LoadPokemonBackSprites(SDL_Renderer* sdlRenderer, LoadedPokeSprites* _loaded
 	//	if(!POKEDEX_REFERENCE->DexNum && i != 0)
 	//		break;
 		tempString = tempString.insert (0, "backsprites/");
+		std::cout << "Loading " << tempString << std::endl;
 		_loadedsprites->POKEMON_BACK_SPRITES.push_back(IMG_LoadTexture(sdlRenderer, tempString.c_str()));
 		if(!_loadedsprites->POKEMON_BACK_SPRITES[i])
 			//printf(tempString.c_str());
 			//anus
 			return -1;
+	};
+	return 0;
+};
+
+int LoadPokedexData(void)
+{
+	//Init 
+	int len = 0;
+
+	//Load file
+	std::ifstream ifs("pokedex/pokedex.bin",std::ios::binary);
+
+	//Check if file loaded...
+	if(ifs)
+	{
+		// Get length
+		ifs.seekg (0, ifs.end);
+		len = ifs.tellg();
+		ifs.seekg (0, ifs.beg);
+
+		//Read
+		for(int i = 0; i < 151; i++)
+		{
+			POKEDEX_REFERENCE[i].DexNum = (POKEMON_IDS)i;
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseHP), sizeof( POKEDEX_REFERENCE[i].BaseHP ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseAttack), sizeof( POKEDEX_REFERENCE[i].BaseAttack ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseDefense), sizeof( POKEDEX_REFERENCE[i].BaseDefense ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseSpeed), sizeof( POKEDEX_REFERENCE[i].BaseSpeed ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseSpecial), sizeof( POKEDEX_REFERENCE[i].BaseSpecial ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Type1), sizeof( POKEDEX_REFERENCE[i].Type1 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Type2), sizeof( POKEDEX_REFERENCE[i].Type2 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].CatchRate), sizeof( POKEDEX_REFERENCE[i].CatchRate ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].BaseExpYield), sizeof( POKEDEX_REFERENCE[i].BaseExpYield ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Move1), sizeof( POKEDEX_REFERENCE[i].Move1 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Move2), sizeof( POKEDEX_REFERENCE[i].Move2 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Move3), sizeof( POKEDEX_REFERENCE[i].Move3 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].Move4), sizeof( POKEDEX_REFERENCE[i].Move4 ) );
+			ifs.read( (char*) (&POKEDEX_REFERENCE[i].GrowthRate), sizeof( POKEDEX_REFERENCE[i].GrowthRate ) );
+		};
+
+		ifs.close();
+	}
+	else 
+	{
+		std::cerr << "Failed to load pokedex/pokedex.bin!"<< std::endl;
+		return -1;
 	};
 	return 0;
 };

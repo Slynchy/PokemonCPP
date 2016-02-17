@@ -1,10 +1,10 @@
-#include "Pokemon.h"
-#include "PokeMath.h"
-
-
 
 #ifndef POKEENGINE_H
 #define POKEENGINE_H
+
+
+#include "Pokemon.h"
+#include "PokeMath.h"
 
 class PokeEngine
 {

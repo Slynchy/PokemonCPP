@@ -93,12 +93,15 @@ class Player: public Trainer
 		unsigned char animationFrame2;
 		int zoneIndex;
 		bool CanMove;
+		bool beatTrainer1;
+		bool beatTrainer2;
+		bool beatTrainer3;
+		short int currentOpponentID;
 
 		Animation walkingLeftRight;
 		Animation walkingUp;
 		Animation walkingDown;
 
-		void Init(SDL_Renderer *sdlRenderer);
 		void KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray);
 		void Draw(SDL_Renderer *sdlRenderer);
 		bool CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos);
@@ -122,6 +125,39 @@ class Player: public Trainer
 			return m_willBattle;
 		};
 
+		Player(SDL_Renderer *sdlRenderer)
+		{
+			standingLeftRight_SpriteRect = SDL_CreateRect(0,0,16,16);
+			standingUp_SpriteRect = SDL_CreateRect(16*5,0,16,16);
+			standingDown_SpriteRect = SDL_CreateRect(16*4,0,16,16);
+
+			walkingLeftRight.init(16*0,	0,	SDL_FLIP_NONE,	16*3,	0,	SDL_FLIP_NONE);
+			walkingUp.init(		16*2,	0,	SDL_FLIP_NONE,	16*5,	0,	SDL_FLIP_NONE,	16*2,	0,	SDL_FLIP_HORIZONTAL,	16*5,	0,	SDL_FLIP_NONE);
+			walkingDown.init(	16*1,	0,	SDL_FLIP_NONE,	16*4,	0,	SDL_FLIP_NONE,	16*1,	0,	SDL_FLIP_HORIZONTAL,	16*4,	0,	SDL_FLIP_NONE);
+
+			animationFrame = 0;	
+			animationFrame2 = 0;
+			direction = DOWN;
+			zoneIndex = 0; // palletTown = 0, route 1 = 1, etc.
+			m_x = 6;
+			m_y = 6;
+			m_moving = false;
+			spritesheet = IMG_LoadTexture(sdlRenderer, "player.png");
+			InBattle = false;
+			CanMove = true;
+			this->SetActivePokemon(0);
+
+			SetInBattle(false);
+			m_willBattle = false;
+			beatTrainer1 = false;
+			beatTrainer2 = false;
+			beatTrainer3 = false;
+			currentOpponentID = 0;
+
+			InitPokeParty(this->GetParty());
+		};
+
+		static int GetObjectAtPosition(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos);
 };
 
 #endif

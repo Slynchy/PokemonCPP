@@ -20,6 +20,8 @@
 
 LoadedPokeSprites LoadedPokemonSprites;
 
+PokedexPokemon POKEDEX_REFERENCE[151];
+
 struct Viewport
 {
 	int m_x;
@@ -46,31 +48,43 @@ int main(int argc, char* argv[])
 
 	bool ANY_KEY_PRESSED = false;
 
-	Objects WorldObjects[5];
+	printf("Initializing WorldObjects...\n");
+	Objects WorldObjects[8];
 	WorldObjects[0].Init("Empty Collision Space", true);
 	WorldObjects[1].Init("Grass", false);
 	WorldObjects[2].Init();
 	WorldObjects[3].Init();
 	WorldObjects[4].Init("WarpSpace", false);
-
+	WorldObjects[5].Init("Trainer1", true);
+	WorldObjects[6].Init("Trainer2", true);
+	WorldObjects[7].Init("Trainer3", true);
+	
+	printf("Initializing SDL...\n");
 	SDL_Init( SDL_INIT_EVERYTHING );
 	SDL_Window* screen;
 	SDL_Renderer *sdlRenderer;
 	SDL_Event events;
-	//SDL_CreateWindowAndRenderer(screenW, screenH, SDL_WINDOW_RESIZABLE, &screen, &sdlRenderer);
 	screen = SDL_CreateWindow("PokemonC++ Prototype", 600, 200, screenW, screenH, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL);
     sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
 	SDL_RenderSetLogicalSize(sdlRenderer, screenW, screenH);
 	const Uint8 *keyboardstate;
 
+	printf("Initializing PokeDex...");
+	LoadPokedexData();
+	
+	printf("Initializing MainMenu...\n");
 	MainMenu* mainMenu = new MainMenu;
 	if(mainMenu->Load(sdlRenderer) == -1)
 		return -1;
+	
+	printf("Initializing Player...\n");
+	Player* player = new Player(sdlRenderer);
 
-	Player* player = new Player;
-	player->Init(sdlRenderer);
+	printf("Initializing Keys...\n");
 	Keys keys;
 	keys.Init();
+
+	printf("Loading Pokemon front/back sprites...\n");
 	if(LoadPokemonFrontSprites(sdlRenderer,&LoadedPokemonSprites) == -1 || LoadPokemonBackSprites(sdlRenderer,&LoadedPokemonSprites) == -1)
 	{
 		return -1;
@@ -79,12 +93,14 @@ int main(int argc, char* argv[])
 	Viewport viewport;
 	viewport.m_x = (8 + (16 * player->m_x));
 	viewport.m_y = (8 + (16 * player->m_y));
-
+	
+	printf("Initializing Zones...\n");
 	std::vector<Zone> CURR_ZONES;
 	Zone area_indigo;
 	CURR_ZONES.push_back(area_indigo);
 	CURR_ZONES[0].Init("indigoplateau.png",sdlRenderer,"indigoplateau.bin");
-
+	
+	printf("Loading text...\n");
 	SDL_Texture* numbers = IMG_LoadTexture(sdlRenderer, "numbers.png");
 	SDL_Texture* UpperCaseFont = IMG_LoadTexture(sdlRenderer, "UpperCaseFont.png");
 
@@ -93,7 +109,8 @@ int main(int argc, char* argv[])
 	PokeEngine::LevelUpBy(&playerpoke, 24);
 	//playerpoke.StatusCond = POISON_COND;
 	player->GetParty()->InsertPokemon(&playerpoke);
-
+	
+	printf("Initializing Battle...\n");
 	Battle* currentBattle;
 	BattleScreen* BattleSprites = new BattleScreen;
 	if(BattleSprites->Load(sdlRenderer) == -1)
@@ -156,8 +173,7 @@ int main(int argc, char* argv[])
 					if(player->IsBattleScheduled())
 					{
 						player->SetInBattle(true);
-						opponent = CreatePokemon((POKEMON_IDS)rand()%150);
-						currentBattle = new Battle(player->GetParty(), opponent);
+						currentBattle = new Battle(player->GetParty(), new PokeParty(&CreatePokemon((POKEMON_IDS)(81)),&CreatePokemon((POKEMON_IDS)(81))));
 						player->SetIsBattleScheduled(false);
 					};
 				}
@@ -189,13 +205,10 @@ void Shutdown(std::vector<Zone> Zones,Player *player, BattleScreen *BattleSprite
 	{
 		SDL_DestroyTexture(Zones[i].image);
 	};
-	//Zones._Destroy();
 	SDL_DestroyTexture(player->spritesheet);
 	BattleSprites->Shutdown();
 	Zones.clear();
 	delete player;
-	//SDL_DestroyRenderer(sdlRenderer);
-    //SDL_DestroyWindow(screen);
 	ShutdownSDL();
 };
 

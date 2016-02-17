@@ -30,14 +30,3 @@ void PokeEngine::LevelUpBy(Pokemon* _subject, short int _amount)
 
 	return;
 };
-
-//
-//void PokeEngine::L_ApplyDamage(lua_State*)
-//{
-//	if(_amount < 1)
-//	{
-//		printf("Battle::ApplyDamage - negative or null value supplied, use ApplyHealth() instead?\n");
-//	};
-//	_subject->CurrHP -= _amount;
-//	return;
-//};

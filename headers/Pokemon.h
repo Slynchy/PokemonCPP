@@ -1,14 +1,15 @@
+#ifndef POKEMON_H
+#define POKEMON_H
+
 #include <string>
 #include "SDL.h"
 #include "SDL_image.h"
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include "Moves.h"
 #include <algorithm>
 #include "PokeMath.h"
-
-#ifndef POKEMON_H
-#define POKEMON_H
 /*
 
 Character				1	-128			127
@@ -184,6 +185,161 @@ const std::string pokemon_names[151] =
 	"WIGGLYTUFF",
 	"ZAPDOS",
 	"ZUBAT"
+};
+
+const std::string ASM_FILENAMES[151] = 
+{
+"abra.asm",
+"aerodactyl.asm",
+"alakazam.asm",
+"arbok.asm",
+"arcanine.asm",
+"articuno.asm",
+"beedrill.asm",
+"bellsprout.asm",
+"blastoise.asm",
+"bulbasaur.asm",
+"butterfree.asm",
+"caterpie.asm",
+"chansey.asm",
+"charizard.asm",
+"charmander.asm",
+"charmeleon.asm",
+"clefable.asm",
+"clefairy.asm",
+"cloyster.asm",
+"cubone.asm",
+"dewgong.asm",
+"diglett.asm",
+"ditto.asm",
+"dodrio.asm",
+"doduo.asm",
+"dragonair.asm",
+"dragonite.asm",
+"dratini.asm",
+"drowzee.asm",
+"dugtrio.asm",
+"eevee.asm",
+"ekans.asm",
+"electabuzz.asm",
+"electrode.asm",
+"exeggcute.asm",
+"exeggutor.asm",
+"farfetchd.asm",
+"fearow.asm",
+"flareon.asm",
+"gastly.asm",
+"gengar.asm",
+"geodude.asm",
+"gloom.asm",
+"golbat.asm",
+"goldeen.asm",
+"golduck.asm",
+"golem.asm",
+"graveler.asm",
+"grimer.asm",
+"growlithe.asm",
+"gyarados.asm",
+"haunter.asm",
+"hitmonchan.asm",
+"hitmonlee.asm",
+"horsea.asm",
+"hypno.asm",
+"ivysaur.asm",
+"jigglypuff.asm",
+"jolteon.asm",
+"jynx.asm",
+"kabuto.asm",
+"kabutops.asm",
+"kadabra.asm",
+"kakuna.asm",
+"kangaskhan.asm",
+"kingler.asm",
+"koffing.asm",
+"krabby.asm",
+"lapras.asm",
+"lickitung.asm",
+"machamp.asm",
+"machoke.asm",
+"machop.asm",
+"magikarp.asm",
+"magmar.asm",
+"magnemite.asm",
+"magneton.asm",
+"mankey.asm",
+"marowak.asm",
+"meowth.asm",
+"metapod.asm",
+"mew.asm",
+"mewtwo.asm",
+"moltres.asm",
+"mrmime.asm",
+"muk.asm",
+"nidoking.asm",
+"nidoqueen.asm",
+"nidoranf.asm",
+"nidoranm.asm",
+"nidorina.asm",
+"nidorino.asm",
+"ninetails.asm",
+"oddish.asm",
+"omanyte.asm",
+"omastar.asm",
+"onix.asm",
+"paras.asm",
+"parasect.asm",
+"persian.asm",
+"pidgeot.asm",
+"pidgeotto.asm",
+"pidgey.asm",
+"pikachu.asm",
+"pinsir.asm",
+"poliwag.asm",
+"poliwhirl.asm",
+"poliwrath.asm",
+"ponyta.asm",
+"porygon.asm",
+"primeape.asm",
+"psyduck.asm",
+"raichu.asm",
+"rapidash.asm",
+"raticate.asm",
+"rattata.asm",
+"rhydon.asm",
+"rhyhorn.asm",
+"sandshrew.asm",
+"sandslash.asm",
+"scyther.asm",
+"seadra.asm",
+"seaking.asm",
+"seel.asm",
+"shellder.asm",
+"slowbro.asm",
+"slowpoke.asm",
+"snorlax.asm",
+"spearow.asm",
+"squirtle.asm",
+"starmie.asm",
+"staryu.asm",
+"tangela.asm",
+"tauros.asm",
+"tentacool.asm",
+"tentacruel.asm",
+"vaporeon.asm",
+"venomoth.asm",
+"venonat.asm",
+"venusaur.asm",
+"victreebel.asm",
+"vileplume.asm",
+"voltorb.asm",
+"vulpix.asm",
+"wartortle.asm",
+"weedle.asm",
+"weepinbell.asm",
+"weezing.asm",
+"wigglytuff.asm",
+"zapdos.asm",
+"zubat.asm"
 };
 
 enum POKEMON_IDS
@@ -419,8 +575,9 @@ struct PokedexPokemon
 
 void InitPokemon(Pokemon *pokemon);
 
-const PokedexPokemon POKEDEX_REFERENCE[151] = 
-{
+
+extern PokedexPokemon POKEDEX_REFERENCE[151];// = 
+/*{
 	{
 		ABRA,
 		25,
@@ -4498,7 +4655,7 @@ const PokedexPokemon POKEDEX_REFERENCE[151] =
 		0,
 		0
 	}
-};
+};*/
 
 Pokemon CreatePokemon(
 	unsigned char Index,
@@ -4544,5 +4701,6 @@ Pokemon CreatePokemon(
 
 int LoadPokemonFrontSprites(SDL_Renderer*, LoadedPokeSprites*);
 int LoadPokemonBackSprites(SDL_Renderer*, LoadedPokeSprites*);
+int LoadPokedexData(void);
 
 #endif

@@ -2,6 +2,7 @@
 #include <SDL_image.h> // SDL Image library
 #include <vector> 
 #include <fstream> 
+#include <iostream> 
 #include <string> 
 
 #ifndef ZONES_H
@@ -36,6 +37,7 @@ class Zone
 		std::vector< std::vector<int> > objectData;
 		void Init(char *imagefilename, SDL_Renderer *sdlRenderer,char *datafilename);
 		void LoadObjectData(char *filename);
+		void LoadObjectData_old(char *filename);
 		void LoadImage(char *filename, SDL_Renderer *sdlRenderer);
 };
 

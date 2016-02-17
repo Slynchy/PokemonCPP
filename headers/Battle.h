@@ -76,7 +76,7 @@ class Battle
 		void Battle::RunAway(Player*);
 		void Battle::Shutdown(Player*);
 
-		void Battle::ExecuteMoveEffect(Pokemon*, Pokemon*, MOVE_EFFECTS);
+		void Battle::ExecuteMoveEffect(Pokemon*, Pokemon*, MOVE_EFFECTS, int _damage);
 
 		static Battle* GetCurrentBattle()
 		{

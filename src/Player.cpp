@@ -82,6 +82,118 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			};
 		};
 	};
+	if(keys->ENTER)
+	{
+		switch(direction)
+		{
+		case UP:
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y-1) == 5)
+			{
+				if(beatTrainer1  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 1;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y-1) == 6)
+			{
+				if(beatTrainer2  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 2;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y-1) == 7)
+			{
+				if(beatTrainer3  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 3;
+				};
+			};
+			break;
+		case DOWN:
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y+1) == 5)
+			{
+				if(beatTrainer1  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 1;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y+1) == 6)
+			{
+				if(beatTrainer2  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 2;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x, Player::m_y+1) == 7)
+			{
+				if(beatTrainer3  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 3;
+				};
+			};
+			break;
+		case RIGHT:
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x+1, Player::m_y) == 5)
+			{
+				if(beatTrainer1  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 1;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x+1, Player::m_y) == 6)
+			{
+				if(beatTrainer2  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 2;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x+1, Player::m_y) == 7)
+			{
+				if(beatTrainer3  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 3;
+				};
+			};
+			break;
+		case LEFT:
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x-1, Player::m_y) == 5)
+			{
+				if(beatTrainer1  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 1;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x-1, Player::m_y) == 6)
+			{
+				if(beatTrainer2 == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 2;
+				};
+			};
+			if(GetObjectAtPosition(levelCollisionArray,Player::m_x-1, Player::m_y) == 7)
+			{
+				if(beatTrainer3  == false)
+				{
+					SetIsBattleScheduled(true);
+					currentOpponentID = 3;
+				};
+			};
+			break;
+		default:
+			break;
+		};
+	};
 	return;
 };
 
@@ -137,35 +249,6 @@ void Player::Draw(SDL_Renderer *sdlRenderer)
 
 };
 
-void Player::Init(SDL_Renderer *sdlRenderer)
-{
-	standingLeftRight_SpriteRect = SDL_CreateRect(0,0,16,16);
-	standingUp_SpriteRect = SDL_CreateRect(16*5,0,16,16);
-	standingDown_SpriteRect = SDL_CreateRect(16*4,0,16,16);
-
-	walkingLeftRight.init(16*0,	0,	SDL_FLIP_NONE,	16*3,	0,	SDL_FLIP_NONE);
-	walkingUp.init(		16*2,	0,	SDL_FLIP_NONE,	16*5,	0,	SDL_FLIP_NONE,	16*2,	0,	SDL_FLIP_HORIZONTAL,	16*5,	0,	SDL_FLIP_NONE);
-	walkingDown.init(	16*1,	0,	SDL_FLIP_NONE,	16*4,	0,	SDL_FLIP_NONE,	16*1,	0,	SDL_FLIP_HORIZONTAL,	16*4,	0,	SDL_FLIP_NONE);
-
-	animationFrame = 0;	
-	animationFrame2 = 0;
-	direction = DOWN;
-	zoneIndex = 0; // palletTown = 0, route 1 = 1, etc.
-	m_x = 6;
-	m_y = 6;
-	m_moving = false;
-	spritesheet = IMG_LoadTexture(sdlRenderer, "player.png");
-	InBattle = false;
-	CanMove = true;
-	this->SetActivePokemon(0);
-
-	SetInBattle(false);
-	m_willBattle = false;
-
-	InitPokeParty(this->GetParty());
-	return;
-};
-
 bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos)
 {
 	if(Player::zoneIndex == -1 || Player::zoneIndex > levelCollisionArray.size()) return false;
@@ -194,4 +277,9 @@ bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, in
 	{
 		return true;		
 	};
+};
+
+int Player::GetObjectAtPosition(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos)
+{
+	return levelCollisionArray[0].objectData[y_pos][x_pos];
 };
