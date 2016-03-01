@@ -3,13 +3,7 @@
 void InitPokeParty(PokeParty *party)
 {
 	party->Num_of_Pokemon = 0;
-	party->Poke1_index = 0;
-	party->Poke2_index = 0;
-	party->Poke3_index = 0;
-	party->Poke4_index = 0;
-	party->Poke5_index = 0;
-	party->Poke6_index = 0;
-	for( int i = 0; i < party->Party.size(); i++)
+	for( size_t i = 0; i < party->Party.size(); i++)
 	{
 		InitPokemon(&party->Party[i]);
 	};
@@ -82,7 +76,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			};
 		};
 	};
-	if(keys->ENTER)
+	if(keys->ENTER && !this->activeMessage->Active)
 	{
 		switch(direction)
 		{
@@ -107,8 +101,8 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					SetIsBattleScheduled(true);
 					currentOpponentID = 3;
+					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!", 0.14f);
 				};
 			};
 			break;
@@ -133,7 +127,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
 					currentOpponentID = 3;
 				};
 			};
@@ -159,7 +153,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
 					currentOpponentID = 3;
 				};
 			};
@@ -185,7 +179,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
 					currentOpponentID = 3;
 				};
 			};
@@ -251,7 +245,7 @@ void Player::Draw(SDL_Renderer *sdlRenderer)
 
 bool Player::CheckCollision(std::vector<Zone> levelCollisionArray, int x_pos, int y_pos)
 {
-	if(Player::zoneIndex == -1 || Player::zoneIndex > levelCollisionArray.size()) return false;
+	if(Player::zoneIndex == -1 || size_t(Player::zoneIndex) > levelCollisionArray.size()) return false;
 	if(x_pos > (unsigned char)levelCollisionArray[Player::zoneIndex].objectData[0].size() || 
 		y_pos > (unsigned char)(levelCollisionArray[Player::zoneIndex].objectData.size()-1) ||
 		x_pos < 0 ||

@@ -1,24 +1,36 @@
 #include "Zones.h"
 
-void Zone::LoadObjectData(char *filename)
+void Zone::LoadObjectData(char *filename, SDL_Renderer *sdlRenderer)
 {
 	//Init 
 	int len = 0;
+	int imgLen = 0;
 	short int world_y;
 	short int world_x;
 	short int world_y_size;
 	short int world_x_size;
+	std::string pokemap_filename(filename);
+	size_t lastindex = pokemap_filename.find_last_of("."); 
+	pokemap_filename = pokemap_filename.substr(0, lastindex); 
+	pokemap_filename += ".pokemap";
 
 	//Load file
-	std::ifstream ifs(filename,std::ios::binary);
+	std::ifstream ifs(pokemap_filename,std::ios::binary);
 
 	//Check if file loaded...
 	if(ifs)
 	{
 		// Get length
 		ifs.seekg (0, ifs.end);
-		len = ifs.tellg();
+		len = (int)ifs.tellg();
 		ifs.seekg (0, ifs.beg);
+		//ifs.read((char*)&imgLen, sizeof(imgLen));
+
+		// Load Image
+		//char * buffer = new char [imgLen];
+		//ifs.read (buffer,imgLen);
+		//this->image = IMG_LoadTexture(sdlRenderer, buffer);
+		//delete buffer;
 
 		// Read world coords and size
 		ifs.read((char*)&world_y, sizeof(world_y));
@@ -31,9 +43,9 @@ void Zone::LoadObjectData(char *filename)
 		this->x_size = world_x_size;
 
 		//Check size
-		if(((world_y_size * world_x_size) * sizeof(world_x_size)) + (4*sizeof(world_x_size)) != len)
+		if(((world_y_size * world_x_size) * sizeof(world_x_size)) + (4*sizeof(world_x_size)) != (len))
 		{
-			std::cerr << "Filesize of " << filename << " does not match expected size! Shutting down Zone::LoadObjectData..." << std::endl;
+			std::cerr << "Filesize of " << pokemap_filename << " does not match expected size! Shutting down Zone::LoadObjectData..." << std::endl;
 			ifs.close();
 			return;
 		};
@@ -61,7 +73,7 @@ void Zone::LoadObjectData(char *filename)
 	}
 	else 
 	{
-		std::cerr << "Failed to load " << filename << " @ Zone::LoadObjectData" << std::endl;
+		std::cerr << "Failed to load " << pokemap_filename << " @ Zone::LoadObjectData" << std::endl;
 		return;
 	};
 
@@ -109,26 +121,36 @@ void Zone::LoadObjectData_old(char *filename)
 	fs.close();
 
 	// THIS IS SO INSECURE THAT IT ASKS ITS FRIENDS IF IT LOOKS GOOD.
-	// ANYONE CAN JUST EDIT THE .BIN TO LOAD HOWEVER MUCH DATA THEY WANT
+	// ANYONE CAN JUST EDIT THE FILE TO LOAD HOWEVER MUCH DATA THEY WANT
 	// AND CAUSE A BUFFER-OVERFLOW.
+	// ^^This is now fixed as of the switch to .pokemap files
 };
 
-void Zone::Init(char *imagefilename, SDL_Renderer *sdlRenderer,char *datafilename)
+void Zone::Init(SDL_Renderer *sdlRenderer,char *datafilename)
 {
 	//Init
 	int x_size = 0;
 	int y_size = 0;
 	int world_x = 0;
 	int world_y = 0;
-	Zone::LoadObjectData(datafilename);
-	Zone::LoadImage(imagefilename,sdlRenderer);
+	Zone::LoadObjectData(datafilename, sdlRenderer);
+	Zone::LoadImage(datafilename,sdlRenderer);
+
+	std::string test(datafilename);
+	size_t lastindex = test.find_last_of("."); 
+	test = test.substr(0, lastindex); 
+	test = ("sfx/" + test + ".mp3");
+	this->music = Mix_LoadMUS( "sfx/indigoplateau.mp3" );
 };
 
 
 void Zone::LoadImage(char *filename, SDL_Renderer *sdlRenderer)
 {
-	//char *tempStr = strcat(filename,".png");
-	Zone::image = IMG_LoadTexture(sdlRenderer,filename);
+	std::string pokemap_filename(filename);
+	size_t lastindex = pokemap_filename.find_last_of("."); 
+	pokemap_filename = pokemap_filename.substr(0, lastindex); 
+	pokemap_filename += ".png";
+	Zone::image = IMG_LoadTexture(sdlRenderer,pokemap_filename.c_str());
 };
 
 int CheckZone(std::vector<Zone>& _Zones, int _x, int _y)

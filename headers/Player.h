@@ -22,15 +22,22 @@ struct Animation
 	void init(int f1_x, int f1_y, SDL_RendererFlip f1_flip,int f2_x, int f2_y, SDL_RendererFlip f2_flip, int f3_x, int f3_y, SDL_RendererFlip f3_flip, int f4_x, int f4_y, SDL_RendererFlip f4_flip);
 };
 
+struct Item
+{
+	std::string m_name;
+	short signed int m_index;
+	short signed int m_quantity;
+	Item(std::string _name, short signed int _index, short signed int _quantity)
+	{
+		m_name = _name;
+		m_index = _index;
+		m_quantity = _quantity;
+	};
+};
+
 struct PokeParty
 {
 	unsigned char Num_of_Pokemon;
-	unsigned char Poke1_index;
-	unsigned char Poke2_index;
-	unsigned char Poke3_index;
-	unsigned char Poke4_index;
-	unsigned char Poke5_index;
-	unsigned char Poke6_index;
 	std::vector<Pokemon> Party;
 	void InsertPokemon(Pokemon* _pokemon)
 	{
@@ -39,13 +46,41 @@ struct PokeParty
 	};
 	PokeParty()
 	{
-		//blanky-wanky-woo
 	};
 	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2)
 	{
-		//blanky-wanky-woo
 		Party.push_back(*_pokemon);	
 		Party.push_back(*_pokemon2);	
+	};
+	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2,Pokemon* _pokemon3)
+	{
+		Party.push_back(*_pokemon);	
+		Party.push_back(*_pokemon2);	
+		Party.push_back(*_pokemon3);	
+	};
+	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2,Pokemon* _pokemon3,Pokemon* _pokemon4)
+	{
+		Party.push_back(*_pokemon);	
+		Party.push_back(*_pokemon2);	
+		Party.push_back(*_pokemon3);	
+		Party.push_back(*_pokemon4);	
+	};
+	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2,Pokemon* _pokemon3,Pokemon* _pokemon4,Pokemon* _pokemon5)
+	{
+		Party.push_back(*_pokemon);	
+		Party.push_back(*_pokemon2);	
+		Party.push_back(*_pokemon3);	
+		Party.push_back(*_pokemon4);	
+		Party.push_back(*_pokemon5);	
+	};
+	PokeParty(Pokemon* _pokemon,Pokemon* _pokemon2,Pokemon* _pokemon3,Pokemon* _pokemon4,Pokemon* _pokemon5,Pokemon* _pokemon6)
+	{
+		Party.push_back(*_pokemon);	
+		Party.push_back(*_pokemon2);	
+		Party.push_back(*_pokemon3);	
+		Party.push_back(*_pokemon4);	
+		Party.push_back(*_pokemon5);	
+		Party.push_back(*_pokemon6);	
 	};
 };
 
@@ -59,6 +94,7 @@ class Trainer
 		int m_ActivePokemon;
 
 	public:
+		std::vector<Item> m_inventory;
 		int GetActivePokemon()
 		{
 			return m_ActivePokemon;
@@ -68,9 +104,19 @@ class Trainer
 			m_ActivePokemon = _input;
 			return;
 		};
+		inline std::string GetName(void)
+		{
+			return m_Name;
+		};
 		PokeParty* GetParty()
 		{
 			return &m_party;
+		};
+		Trainer(){};
+		Trainer(std::string _name, PokeParty* _party)
+		{
+			m_party = *_party;
+			m_Name = _name;
 		};
 };
 
@@ -97,6 +143,13 @@ class Player: public Trainer
 		bool beatTrainer2;
 		bool beatTrainer3;
 		short int currentOpponentID;
+		bool inPauseMenu;
+		short signed int selectedPauseItem;
+		short signed int pauseMenuDepth;
+		short signed int selectedMenuItem;
+		short signed int selectedMenuItem2;
+		short signed int pokedexPage;
+		Message * activeMessage;
 
 		Animation walkingLeftRight;
 		Animation walkingUp;
@@ -153,6 +206,14 @@ class Player: public Trainer
 			beatTrainer2 = false;
 			beatTrainer3 = false;
 			currentOpponentID = 0;
+			inPauseMenu = false;
+			selectedPauseItem = 0;
+			pauseMenuDepth = 0;
+			selectedMenuItem = 0;
+			selectedMenuItem2 = 0;
+			pokedexPage = 0;
+			this->activeMessage = new Message("");
+			this->activeMessage->Active = false;
 
 			InitPokeParty(this->GetParty());
 		};

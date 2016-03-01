@@ -1,12 +1,16 @@
 #include "SDL.h" // Main SDL library
-//#include <SDL_image.h> // SDL Image library
+#include <SDL_mixer.h> 
+#include <cstring> 
 #include "PokeMath.h"
 #include "Player.h"
 #include "Pokemon.h"
 #include "PokeEngine.h"
+#include <chrono>
 
 #ifndef BATTLE_H
 #define BATTLE_H
+
+void ShutdownBattle(void);
 
 class Battle
 {
@@ -15,6 +19,7 @@ class Battle
 		Pokemon PlayersActivePokemon; // an instance 
 		bool isTrainer;
 		unsigned char opponentActivePkmn;
+		Player* currentPlayer;
 	public:
 		enum Menus
 		{
@@ -36,10 +41,10 @@ class Battle
 		Menus CurrentMenu;
 		signed char MenuDepth;
 
-		Battle(PokeParty* _PlayerParty, PokeParty* _oppParty)
+		Battle(Player* _Player, PokeParty* _oppParty)
 		{
-			Battle::PlayerParty = _PlayerParty;
-			Battle::PlayersActivePokemon = _PlayerParty->Party[0];
+			Battle::PlayerParty = _Player->GetParty();
+			Battle::PlayersActivePokemon = Battle::PlayerParty->Party[0];
 			Battle::OpponentParty = _oppParty;
 			Battle::pokemon = _oppParty->Party[0];
 			Battle::SelectedMenuItem = 0;
@@ -50,10 +55,10 @@ class Battle
 			Battle::isTrainer = true;
 			Battle::opponentActivePkmn = 0;
 		};
-		Battle(PokeParty* _PlayerParty, Pokemon _OpponentPokemon)
+		Battle(Player* _Player, Pokemon _OpponentPokemon)
 		{
-			Battle::PlayerParty = _PlayerParty;
-			Battle::PlayersActivePokemon = _PlayerParty->Party[0];
+			Battle::PlayerParty = _Player->GetParty();
+			Battle::PlayersActivePokemon = Battle::PlayerParty->Party[0];
 			Battle::pokemon = _OpponentPokemon;
 			Battle::SelectedMenuItem = 0;
 			Battle::CurrentMenu = UNDECIDED;
@@ -66,7 +71,7 @@ class Battle
 		void Reset();
 
 		void UpdateUIPosition(Keys*);
-		void Logic(Keys*, Player*);
+		void Logic(Keys*, Player*, bool*);
 		void Battle::ResetUI();
 		short int Battle::GetPlayerHP();
 		short int Battle::GetOpponentHP();
@@ -75,6 +80,7 @@ class Battle
 		bool Battle::HasOpponentActivePokemonFainted();
 		void Battle::RunAway(Player*);
 		void Battle::Shutdown(Player*);
+		void Battle::SwitchActivePokemon(short int, Player*);
 
 		void Battle::ExecuteMoveEffect(Pokemon*, Pokemon*, MOVE_EFFECTS, int _damage);
 
@@ -88,38 +94,39 @@ class Battle
 			return; 
 		};
 
+		inline Player* GetPlayer(void)
+		{
+			return currentPlayer;
+		};
+
+		inline void Battle::ExternShutdown()
+		{
+			this->Shutdown(this->GetPlayer());
+			return;
+		};
+
 
 	//	void CreateBattle(PokeParty*,Trainer*);
 };
 
 struct BattleScreen
 {
-
 	SDL_Texture* OpponentInfo;
 	SDL_Texture* PlayerInfo;
 	SDL_Texture* Frame;
 	SDL_Texture* Frame_Fight;
 	SDL_Texture* HPBar;
+	SDL_Texture* HPBar_Outline;
 	SDL_Texture* arrow;
+	SDL_Texture* pkmnSelectScreen;
+	SDL_Texture* lvlslash;
+	SDL_Texture* pkmn_icon;
+	SDL_Texture* pokedex;
+	SDL_Texture* pokedexdetails;
+	SDL_Texture* itemsMenu;
+	SDL_Texture* pkmnselection_box;
 	int Load(SDL_Renderer* );
 	void Shutdown();
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif

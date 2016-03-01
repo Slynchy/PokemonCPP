@@ -118,7 +118,6 @@ int LoadPokemonFrontSprites(SDL_Renderer* sdlRenderer, LoadedPokeSprites* _loade
 		std::cout << "Loading " << tempString << std::endl;
 		_loadedsprites->POKEMON_FRONT_SPRITES.push_back(IMG_LoadTexture(sdlRenderer, tempString.c_str()));
 		if(!_loadedsprites->POKEMON_FRONT_SPRITES[i])
-			//anus
 			return -1;
 	};
 	return 0;
@@ -132,14 +131,10 @@ int LoadPokemonBackSprites(SDL_Renderer* sdlRenderer, LoadedPokeSprites* _loaded
 		std::transform(tempString.begin(), tempString.end(), tempString.begin(), ::tolower);
 		tempString.append("b.png");
 
-	//	if(!POKEDEX_REFERENCE->DexNum && i != 0)
-	//		break;
 		tempString = tempString.insert (0, "backsprites/");
 		std::cout << "Loading " << tempString << std::endl;
 		_loadedsprites->POKEMON_BACK_SPRITES.push_back(IMG_LoadTexture(sdlRenderer, tempString.c_str()));
 		if(!_loadedsprites->POKEMON_BACK_SPRITES[i])
-			//printf(tempString.c_str());
-			//anus
 			return -1;
 	};
 	return 0;
@@ -158,7 +153,7 @@ int LoadPokedexData(void)
 	{
 		// Get length
 		ifs.seekg (0, ifs.end);
-		len = ifs.tellg();
+		len = int(ifs.tellg());
 		ifs.seekg (0, ifs.beg);
 
 		//Read

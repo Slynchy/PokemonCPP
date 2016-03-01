@@ -10,9 +10,10 @@ struct Keys
 	bool A;
 	bool D;
 	bool ENTER;
+	bool ESC;
 	bool BACKSPACE;
-	signed int Timer;
-	void Reset(){W = false;S = false;A = false;D = false;BACKSPACE = false;ENTER = false;};
+	int Timer;
+	void Reset(){W = false;S = false;A = false;D = false;BACKSPACE = false;ENTER = false;ESC = false;};
 	void Init(){Reset();Timer = 0;};
 	void Update(const Uint8* state)
 	{
@@ -22,7 +23,8 @@ struct Keys
 		D = (bool)state[SDL_SCANCODE_D];
 		ENTER = (bool)state[SDL_SCANCODE_RETURN];
 		BACKSPACE = (bool)state[SDL_SCANCODE_BACKSPACE];
-		if(W == true || S == true || A == true || D == true || BACKSPACE == true || ENTER == true)
+		ESC = (bool)state[SDL_SCANCODE_ESCAPE];
+		if(W == true || S == true || A == true || D == true || BACKSPACE == true || ENTER == true || ESC == true)
 			Timer = 0;
 		return;
 	};

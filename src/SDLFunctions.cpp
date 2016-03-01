@@ -19,6 +19,7 @@ int InitializeSDL(int scrW, int scrH, SDL_Renderer* sdlRenderer, SDL_Window* scr
 
 void ShutdownSDL()
 {
+    Mix_Quit();
     IMG_Quit();
     SDL_Quit();
 };

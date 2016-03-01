@@ -9,8 +9,10 @@ int MainMenu::Load(SDL_Renderer* sdlRenderer)
 	Pokemon_Logo_Rect = SDL_CreateRect(16,-56,128,56); // 16,8 dest
 	CurrentPKMN_Rect = SDL_CreateRect(216,96,56,56); // 48,96 dest 
 	Trainer_Rect = SDL_CreateRect(82,80,40,56);
+	Copyrights2_Rect = SDL_CreateRect(4,144-8,152,8);
 
 	Copyrights_Sprite = IMG_LoadTexture(sdlRenderer,"mainmenu/copyright.png");
+	Copyrights2_Sprite = IMG_LoadTexture(sdlRenderer,"mainmenu/copyright2.png");
 	Gamefreak_Intro = IMG_LoadTexture(sdlRenderer,"mainmenu/gamefreak_intro.png");
 
 	Pkmn_Logo = IMG_LoadTexture(sdlRenderer,"mainmenu/pokemon_logo.png");
@@ -47,19 +49,35 @@ void MainMenu::Draw(SDL_Renderer* sdlRenderer, std::vector<SDL_Texture*> _loaded
 			{
 				MENUSTATE = PRESS_START;
 				Timer = 0.0f;
+				subState = 0;
 			};
 			break;
 		case PRESS_START:
 			if(1==1)
 			{
-				if(Pokemon_Logo_Rect.y != 8)
+				if(subState == 0)
 				{
-					Pokemon_Logo_Rect.y += 4;
-				};
-				if(Pokemon_Blue_Rect.x != 56)
+					if(Pokemon_Logo_Rect.y != 8)
+					{
+						Pokemon_Logo_Rect.y += 2;
+					}
+					else 
+					{
+						subState = 1;	
+					};
+				}
+				else if(subState == 1)
 				{
-					Pokemon_Blue_Rect.x -= 4;
+					if(Pokemon_Blue_Rect.x != 56)
+					{
+						Pokemon_Blue_Rect.x -= 2;
+					} 
+					else 
+					{
+						subState = 2;
+					};
 				};
+				SDL_RenderCopy(sdlRenderer, MainMenu::Copyrights2_Sprite,NULL,&Copyrights2_Rect);
 				SDL_RenderCopy(sdlRenderer, MainMenu::Pkmn_Logo,NULL,&Pokemon_Logo_Rect);
 				SDL_RenderCopy(sdlRenderer, MainMenu::PkmnBlu,NULL,&Pokemon_Blue_Rect);
 				
@@ -70,24 +88,34 @@ void MainMenu::Draw(SDL_Renderer* sdlRenderer, std::vector<SDL_Texture*> _loaded
 
 				SDL_RenderCopy(sdlRenderer, _loadedfrontsprites[SelectedPkmn_index],NULL,&CurrentPKMN_Rect);
 				SDL_RenderCopy(sdlRenderer, MainMenu::Trainer,NULL,&Trainer_Rect);
-				if(CurrentPKMN_Rect.x > 48)
+				if(subState == 2)
 				{
-					CurrentPKMN_Rect.x -= 2;
-				} else {
-					Timer += 0.016f;
-					if(Timer > 6.0f)
+					if(CurrentPKMN_Rect.x > 48)
 					{
-						if(CurrentPKMN_Rect.x > -56)
+						CurrentPKMN_Rect.x -= 2;
+					} else {
+						Timer += 0.016f;
+						if(Timer > 6.0f)
 						{
-							CurrentPKMN_Rect.x -= 2;
-						} else {
-							Timer = 0.0f;
-							CurrentPKMN_Rect.x = 216;
-							SelectedPkmn_index = rand()%150;
+							if(CurrentPKMN_Rect.x > -56)
+							{
+								CurrentPKMN_Rect.x -= 2;
+							} else {
+								Timer = 0.0f;
+								CurrentPKMN_Rect.x = 216;
+								int width=0,height=0;
+								while(width != 40 && height != 40)
+								{
+									SelectedPkmn_index = rand()%150;
+									SDL_QueryTexture(_loadedfrontsprites[SelectedPkmn_index], NULL, NULL, &width, &height);
+								};
+							};
 						};
 					};
 				};
 			};
+			break;
+		case NEW_CONTINUE_GAME_OPTIONS:
 			break;
 		default:
 			break;

@@ -1,5 +1,6 @@
 #include "SDL.h" // Main SDL 
 #include <SDL_image.h> // SDL Image library
+#include <SDL_mixer.h> 
 #include <vector> 
 #include <fstream> 
 #include <iostream> 
@@ -28,6 +29,7 @@ class Zone
 {
 	private:
 	public:
+		Mix_Music* music; 
 		int x_size;
 		int y_size;
 		int world_x;
@@ -35,8 +37,8 @@ class Zone
 		SDL_Texture *image;
 		SDL_Texture *foreground;
 		std::vector< std::vector<int> > objectData;
-		void Init(char *imagefilename, SDL_Renderer *sdlRenderer,char *datafilename);
-		void LoadObjectData(char *filename);
+		void Init(SDL_Renderer *sdlRenderer,char *datafilename);
+		void LoadObjectData(char *filename, SDL_Renderer *sdlRenderer);
 		void LoadObjectData_old(char *filename);
 		void LoadImage(char *filename, SDL_Renderer *sdlRenderer);
 };

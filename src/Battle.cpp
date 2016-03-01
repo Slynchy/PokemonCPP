@@ -24,9 +24,25 @@ void Battle::RunAway(Player* _player)
 	return;
 };
 
+void Battle::SwitchActivePokemon(short int slot, Player* _player)
+{
+	Pokemon temporaryPkmn;
+
+	temporaryPkmn = _player->GetParty()->Party[slot];
+	_player->GetParty()->Party[slot] = Battle::PlayersActivePokemon;
+	_player->GetParty()->Party[0] = temporaryPkmn;
+	Battle::PlayersActivePokemon = _player->GetParty()->Party[0];
+
+	return;
+};
+
 void Battle::Shutdown(Player* _player)
 {
-	//_player->GetParty()->Party[0] = Battle::PlayersActivePokemon;
+	if(_player->activeMessage)
+	{
+		if(_player->activeMessage->Active == true)
+			return;
+	};
 	_player->GetParty()->Party[0].StatusCond = Battle::PlayersActivePokemon.StatusCond;
 	_player->GetParty()->Party[0].CurrHP = Battle::PlayersActivePokemon.CurrHP;
 	_player->GetParty()->Party[0].MoveSet[0].PP = Battle::PlayersActivePokemon.MoveSet[0].PP;
@@ -54,77 +70,177 @@ void Battle::Shutdown(Player* _player)
 	};
 
 	_player->SetInBattle(false);
+	Mix_HaltMusic();
 	delete this;
 	return;
 };
 
-void Battle::Logic(Keys* _keys, Player* _player)
+void Battle::Logic(Keys* _keys, Player* _player, bool* _quit)
 {
-	if(HasOpponentActivePokemonFainted() == true)
+	srand(time(NULL));
+	if(HasOpponentActivePokemonFainted() == true && CurrentMenu != VICTORY)
 	{
 		CurrentMenu = VICTORY;
+		_player->activeMessage->Reset();
 	} 
 	else if(HasActivePokemonFainted() == true)
 	{
-		// fail
+		for(size_t i = 1; i < _player->GetParty()->Party.size(); i++)
+		{
+			if(_player->GetParty()->Party[i].CurrHP > 0)
+			{
+				Battle::SwitchActivePokemon(i, _player);
+				return;
+			};
+		};
+		//GAME OVER.
+		*_quit = true;
 	};
 
 	if(CurrentMenu == VICTORY)
 	{
-		if(_keys->ENTER == false)
+		if(Battle::isTrainer && opponentActivePkmn < (OpponentParty->Party.size()-1))
 		{
-			// naffink
-			return;
-		}
-		else
-		{
-			if(Battle::isTrainer && opponentActivePkmn < (OpponentParty->Party.size()-1))
+			if(_player->activeMessage->Active==false && _player->activeMessage->Complete == false)
+			{
+				std::string zero = pokemon_names[pokemon.Index];
+				std::string one = " FAINTED!";
+				std::string complete = (zero + one);
+				if(complete.length() < 15)
+				{
+					// do nothing
+				} 
+				else 
+				{
+					size_t tempsize = (15 - complete.length());
+					for(size_t i = 0; i < tempsize; i++)
+					{
+						// Fix for a weird infinite loop
+						if(tempsize > 40) break;
+						zero += " ";
+					};
+				};
+				_player->activeMessage = new Message( _strdup( (zero + one).c_str()) );
+			}
+			else if(_player->activeMessage->Complete == true)
 			{
 				Battle::pokemon = OpponentParty->Party[++opponentActivePkmn];
 				Battle::PlayersTurn = true;
 				Battle::ResetUI();
+				_player->activeMessage->Reset();
 				return;
-			} else {
-				Battle::Shutdown(_player);
 			};
+		} else {
+			if(_player->activeMessage->Active==false)
+			{
+				_player->activeMessage = new Message("YOU WIN", &ShutdownBattle ,0.07f);
+			};
+			return;
 		};
 	}
 	else if(CurrentMenu == UNDECIDED)
 	{
 		if(Battle::PlayersTurn == true)
 		{
-			Battle::UpdateUIPosition(_keys);
-			if(CurrentMenu == FIGHT)
+			if(_player->activeMessage->Active == false && _player->activeMessage->Complete == false)
 			{
-				int tempDamage = PokeMath::CalculateDamage(Battle::GetActivePokemon().Level,
-														Battle::GetActivePokemon().Attack,
-														pokemon.Defence,
-														MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Power,
-														1);
-				PokeEngine::ApplyDamage(&pokemon, tempDamage); 
-				Battle::ExecuteMoveEffect(&pokemon, &PlayersActivePokemon, MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Effect,tempDamage);
-				--PlayersActivePokemon.MoveSet[SelectedAttack].PP;
-				Battle::PlayersTurn = false;
-				Battle::ResetUI();
+				Battle::UpdateUIPosition(_keys);
+				if(CurrentMenu == FIGHT)
+				{
+					int tempDamage = PokeMath::CalculateDamage(Battle::GetActivePokemon().Level,
+															Battle::GetActivePokemon().Attack,
+															pokemon.Defence,
+															MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Power,
+															1);
+					PokeEngine::ApplyDamage(&pokemon, tempDamage); 
+					Battle::ExecuteMoveEffect(&pokemon, &PlayersActivePokemon, MOVES_ARRAY[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index].Effect,tempDamage);
+					--PlayersActivePokemon.MoveSet[SelectedAttack].PP;
+					
+					std::string zero = pokemon_names[Battle::GetActivePokemon().Index];
+					std::string one = " USED ";
+					std::string two = MoveNames[Battle::GetActivePokemon().MoveSet[SelectedAttack].Index];
+					std::string complete = (zero + one);
+					if(complete.length() < 15)
+					{
+						size_t tempsize = (15 - complete.length());
+						for(size_t i = 0; i < tempsize; i++)
+						{
+							one += " ";
+						};
+					};
+					Battle::ResetUI();
+					_player->activeMessage = new Message( _strdup( (zero + one + two).c_str()) );
+
+				}
+				else if(CurrentMenu == RUN)
+				{
+					if(this->isTrainer!=true)
+					{
+						Battle::RunAway(_player);
+					}
+					else
+					{
+						CurrentMenu = UNDECIDED;
+						Battle::ResetUI();
+					};
+				};
 			}
-			else if(CurrentMenu == RUN)
+			else
 			{
-				Battle::RunAway(_player);
+				if(_player->activeMessage->Complete == true)
+				{
+					Battle::PlayersTurn = false;
+					_player->activeMessage->Reset();
+				};
 			};
 		}
 		else
 		{
-			int tempDamage = PokeMath::CalculateDamage(pokemon.Level,
-																					pokemon.Attack,
-																					Battle::GetActivePokemon().Defence,
-																					MOVES_ARRAY[pokemon.MoveSet[0].Index].Power,
-																					1);
-			PokeEngine::ApplyDamage(&PlayersActivePokemon, tempDamage); 
-			Battle::ExecuteMoveEffect(&PlayersActivePokemon,&pokemon, MOVES_ARRAY[pokemon.MoveSet[0].Index].Effect,tempDamage);
-			Battle::PlayersTurn = true;
-			//ChosenAction = UNDECIDED;
+			if(_player->activeMessage->Active == false && _player->activeMessage->Complete == false)
+			{
+				int tempint = rand()%4;
+				int tempDamage = PokeMath::CalculateDamage(			pokemon.Level,
+																	pokemon.Attack,
+																	Battle::GetActivePokemon().Defence,
+																	MOVES_ARRAY[pokemon.MoveSet[tempint].Index].Power,
+																	1);
+				PokeEngine::ApplyDamage(&PlayersActivePokemon, tempDamage); 
+				Battle::ExecuteMoveEffect(&PlayersActivePokemon,&pokemon, MOVES_ARRAY[pokemon.MoveSet[tempint].Index].Effect,tempDamage);
+					
+				std::string zero = pokemon_names[pokemon.Index];
+				std::string one = " USED ";
+				std::string two = MoveNames[pokemon.MoveSet[tempint].Index];
+				std::string complete = (zero + one);
+				if(complete.length() < 15)
+				{
+					size_t tempsize = (15 - complete.length());
+					for(size_t i = 0; i < tempsize; i++)
+					{
+						one += " ";
+					};
+				};
+				_player->activeMessage = new Message( _strdup( (zero + one + two).c_str()) );
+			}
+			else
+			{
+				if(_player->activeMessage->Complete == true)
+				{
+					_player->activeMessage->Reset();
+					Battle::PlayersTurn = true;	
+				};
+			};
 		};
 		return;
+	}
+	else if(CurrentMenu == PKMN)
+	{
+		Battle::UpdateUIPosition(_keys);
+		if(MenuDepth > 2)
+		{
+			Battle::SwitchActivePokemon(_player->selectedMenuItem,_player);
+			Battle::ResetUI();
+			Battle::PlayersTurn = false;
+		};
 	};
 	return;
 };
@@ -168,6 +284,14 @@ int BattleScreen::Load(SDL_Renderer* sdlRenderer)
 	HPBar = IMG_LoadTexture(sdlRenderer, "fightscreen/HPBar.png");
 	arrow = IMG_LoadTexture(sdlRenderer, "fightscreen/arrow.png");
 	Frame_Fight = IMG_LoadTexture(sdlRenderer, "fightscreen/frame_fight.png");
+	pkmnSelectScreen = IMG_LoadTexture(sdlRenderer, "gfx/pkmnselection.png");
+	HPBar_Outline = IMG_LoadTexture(sdlRenderer, "gfx/hpbar_outline.png");
+	lvlslash = IMG_LoadTexture(sdlRenderer, "gfx/lvl-slash.png");
+	pkmn_icon = IMG_LoadTexture(sdlRenderer, "gfx/pkmn.png");
+	pokedex = IMG_LoadTexture(sdlRenderer, "gfx/pokedex.png");
+	pokedexdetails = IMG_LoadTexture(sdlRenderer, "gfx/pokedexdetails.png");
+	itemsMenu = IMG_LoadTexture(sdlRenderer, "gfx/itemsmenu.png");
+	pkmnselection_box = IMG_LoadTexture(sdlRenderer, "gfx/pkmnselection_box.png");
 	if(!OpponentInfo || !PlayerInfo || !Frame || !HPBar || !arrow || !Frame_Fight)
 		return -1;
 	return 0;
@@ -181,6 +305,12 @@ void BattleScreen::Shutdown()
 	SDL_DestroyTexture(BattleScreen::HPBar);
 	SDL_DestroyTexture(BattleScreen::arrow);
 	SDL_DestroyTexture(BattleScreen::Frame_Fight);
+	SDL_DestroyTexture(BattleScreen::pkmnSelectScreen);
+	SDL_DestroyTexture(BattleScreen::HPBar_Outline);
+	SDL_DestroyTexture(BattleScreen::lvlslash);
+	SDL_DestroyTexture(BattleScreen::pkmn_icon);
+	SDL_DestroyTexture(BattleScreen::pokedex);
+	SDL_DestroyTexture(BattleScreen::pokedexdetails);
 	delete this;
 	return;
 };
@@ -279,6 +409,18 @@ void Battle::UpdateUIPosition(Keys* _keys)
 		else if(MenuDepth == 1 && SelectedMenuItem == 0)
 		{
 			Battle::CurrentMenu = FIGHT;
+		}
+		else if(MenuDepth >= 1 && SelectedMenuItem == 1)
+		{
+			Battle::CurrentMenu = PKMN;
+			if(MenuDepth >= 2)
+			{
+				MenuDepth++;
+			} 
+			else 
+			{
+				MenuDepth++;
+			};
 		};
 	} 
 	else if(_keys->BACKSPACE)
@@ -286,7 +428,7 @@ void Battle::UpdateUIPosition(Keys* _keys)
 		if(MenuDepth > 0)
 		{
 			Battle::CurrentMenu = UNDECIDED;
-			MenuDepth = 0;
+			MenuDepth--;
 		};
 	};
 	return;
