@@ -4,7 +4,7 @@
 int MainMenu::Load(SDL_Renderer* sdlRenderer)
 {
 	Timer = 0.0f;
-	SelectedPkmn_index = rand()%150;
+	SelectedPkmn_index = 81; // Mew! <3
 	Pokemon_Blue_Rect = SDL_CreateRect(224,64,64,8); // 56,64 dest
 	Pokemon_Logo_Rect = SDL_CreateRect(16,-56,128,56); // 16,8 dest
 	CurrentPKMN_Rect = SDL_CreateRect(216,96,56,56); // 48,96 dest 
@@ -12,15 +12,17 @@ int MainMenu::Load(SDL_Renderer* sdlRenderer)
 	Copyrights2_Rect = SDL_CreateRect(4,144-8,152,8);
 
 	Copyrights_Sprite = IMG_LoadTexture(sdlRenderer,"mainmenu/copyright.png");
-	Copyrights2_Sprite = IMG_LoadTexture(sdlRenderer,"mainmenu/copyright2.png");
+	Copyrights2_Sprite = IMG_LoadTexture(sdlRenderer,std::string("./localizations/" + Language_Master::LANGUAGE + "/mainmenu/copyright2.png").c_str());
 	Gamefreak_Intro = IMG_LoadTexture(sdlRenderer,"mainmenu/gamefreak_intro.png");
 
 	Pkmn_Logo = IMG_LoadTexture(sdlRenderer,"mainmenu/pokemon_logo.png");
 	Trainer = IMG_LoadTexture(sdlRenderer,"mainmenu/player_title.png");
 	PkmnBlu = IMG_LoadTexture(sdlRenderer,"mainmenu/blueversion.png");
 
+	Controls = IMG_LoadTexture(sdlRenderer,std::string("./localizations/" + Language_Master::LANGUAGE + "/mainmenu/controls.png").c_str());
 
-	if(!Copyrights_Sprite || !Gamefreak_Intro || !Pkmn_Logo || !Trainer || !PkmnBlu)
+
+	if(!Copyrights_Sprite || !Gamefreak_Intro || !Pkmn_Logo || !Trainer || !PkmnBlu || !Controls)
 	{
 		printf("Failed to load a main menu png\n");
 		return -1;
@@ -116,6 +118,7 @@ void MainMenu::Draw(SDL_Renderer* sdlRenderer, std::vector<SDL_Texture*> _loaded
 			};
 			break;
 		case NEW_CONTINUE_GAME_OPTIONS:
+			SDL_RenderCopy(sdlRenderer, Controls, NULL, NULL);
 			break;
 		default:
 			break;

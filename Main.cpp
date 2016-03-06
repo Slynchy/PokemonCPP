@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Battle.h"
 #include "MainMenu.h"
+#include "Localizer.h"
 
 #include <iostream>
 #include <fstream>
@@ -35,13 +36,6 @@ struct Viewport
 	int m_y;
 };
 
-enum GameStates
-{
-	MAIN_MENU,
-	INGAME,
-	GAME_WON
-};
-
 void Shutdown(std::vector<Zone>,Player *, BattleScreen *);
 void DrawOverworld(SDL_Renderer *sdlRenderer, std::vector<Zone>& Zone_To_Draw,int scrW, int scrH, Player *player, Viewport *viewport);
 void DrawBattle(SDL_Renderer*, Player*, Battle*,BattleScreen*, SDL_Texture*, SDL_Texture*, Keys*);
@@ -51,10 +45,23 @@ void DrawPauseMenu(SDL_Renderer*, SDL_Texture*, Player*, Keys*, BattleScreen*, b
 void DrawPkmnSelectMenu(SDL_Renderer*, BattleScreen*, Player*, SDL_Texture*, SDL_Texture*, Keys*);
 void DrawPokedex(SDL_Renderer*, BattleScreen*, Player*, SDL_Texture*, SDL_Texture*);
 void ShutdownBattle(void);
-void DrawItemMenu(SDL_Renderer*, BattleScreen*, Player*, SDL_Texture*, SDL_Texture*, Keys*);
+void DrawItemMenu(SDL_Renderer*, BattleScreen*, Player*, SDL_Texture*, SDL_Texture*, Keys*, Battle*);
 
 int main(int argc, char* argv[]) 
 {
+	std::cout << "PokemonC++ (C) Amduat Games, Sam Lynch" << std::endl << std::endl;
+    if (argc >= 2) {
+		Language_Master::LANGUAGE = (std::string)argv[1];
+    }
+	else 
+	{
+		Language_Master::LANGUAGE = "english";
+	};
+	
+	printf("Initializing Localization...\n");
+	if(Language_Master::Init(Language_Master::LANGUAGE) == -1)
+		return -1;
+
 	srand(unsigned int(time(NULL)));
 	GameStates GAMESTATE = MAIN_MENU;
 
@@ -70,18 +77,6 @@ int main(int argc, char* argv[])
 	WorldObjects[5].Init("Trainer1", true);
 	WorldObjects[6].Init("Trainer2", true);
 	WorldObjects[7].Init("Trainer3", true);
-
-	printf("Initializing Trainers...\n");
-	Trainer* EliteFour[3];
-	EliteFour[0] = new Trainer("Agatha", new PokeParty(new Pokemon(40,56),new Pokemon(43,56)));
-	EliteFour[1] = new Trainer("Agatha", new PokeParty(new Pokemon(40,56),new Pokemon(43,56)));
-	EliteFour[2] = new Trainer("Agatha", new PokeParty(
-		new Pokemon(40,100,CONFUSE_RAY,NIGHT_SHADE,HYPNOSIS,DREAM_EATER),					// gengar
-		new Pokemon(43,56, SUPERSONIC, CONFUSE_RAY, WING_ATTACK, HAZE),						// golbat
-		new Pokemon(51,55, CONFUSE_RAY, NIGHT_SHADE, HYPNOSIS, DREAM_EATER),				// haunter 
-		new Pokemon(3,58, BITE, GLARE, SCREECH, ACID),										// arbok
-		new Pokemon(40,60, CONFUSE_RAY, NIGHT_SHADE, TOXIC, DREAM_EATER)					// Gengar
-	));
 	
 	printf("Initializing SDL...\n");
 	SDL_Init( SDL_INIT_EVERYTHING );
@@ -120,7 +115,7 @@ int main(int argc, char* argv[])
 	player = new Player(sdlRenderer);
 	player->m_x = 6;
 	player->m_y = 32;
-	SDL_Texture* pauseMenu = IMG_LoadTexture(sdlRenderer, "gfx/pause.png");
+	SDL_Texture* pauseMenu = IMG_LoadTexture(sdlRenderer, std::string("./localizations/" + Language_Master::LANGUAGE + "/gfx/pause.png").c_str());
 
 	printf("Initializing Keys...\n");
 	Keys keys;
@@ -156,18 +151,44 @@ int main(int argc, char* argv[])
 	SDL_Texture* textBox = IMG_LoadTexture(sdlRenderer, "text-frame.png");
 	
 	/*
-		This is to give the player
-		some randomly generated pokemon...
-		Not bothering to format/space out the parameters
-		because they all are the same:
-			(random pokeID, random level, random move from MOVES_ARRAY * 4)
+		Initing player with random pokemon
+		and trainers with pre-defined pokemon
 	*/
-	Pokemon playerpoke((POKEMON_IDS)(rand()%150),100,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
-	Pokemon playerpoke2((POKEMON_IDS)(rand()%150),100,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
-	Pokemon playerpoke3((POKEMON_IDS)(rand()%150),100,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	printf("Initializing Trainers...\n");
+	Pokemon playerpoke((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	Pokemon playerpoke2((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	Pokemon playerpoke3((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	Pokemon playerpoke4((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	Pokemon playerpoke5((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
+	Pokemon playerpoke6((POKEMON_IDS)(rand()%150),rand()%20+50,rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)),rand()%(sizeof(MOVES_ARRAY)/sizeof(*MOVES_ARRAY)));
 	player->GetParty()->InsertPokemon(&playerpoke);
 	player->GetParty()->InsertPokemon(&playerpoke2);
 	player->GetParty()->InsertPokemon(&playerpoke3);
+	player->GetParty()->InsertPokemon(&playerpoke4);
+	player->GetParty()->InsertPokemon(&playerpoke5);
+	player->GetParty()->InsertPokemon(&playerpoke6);
+	Trainer* EliteFour[3];
+	EliteFour[0] = new Trainer("Lorelei", new PokeParty(
+		new Pokemon(DEWGONG,54,GROWL, AURORA_BEAM, REST, TAKE_DOWN),
+		new Pokemon(CLOYSTER/* the Stupid */,53, SUPERSONIC, CLAMP, AURORA_BEAM, SPIKE_CANNON),
+		new Pokemon(SLOWBRO,54, GROWL, WATER_GUN, WITHDRAW, AMNESIA),
+		new Pokemon(JYNX,53, DOUBLESLAP, ICE_PUNCH, BODY_SLAM, THRASH),
+		new Pokemon(LAPRAS,53, BODY_SLAM, CONFUSE_RAY, BLIZZARD, HYDRO_PUMP)));
+
+	EliteFour[1] = new Trainer("Bruno", new PokeParty(
+		new Pokemon(ONIX,53,ROCK_THROW, RAGE, SLAM, HARDEN),
+		new Pokemon(HITMONCHAN,55, ICE_PUNCH, THUNDERPUNCH, MEGA_PUNCH, COUNTER),
+		new Pokemon(HITMONLEE,55, JUMP_KICK, FOCUS_ENERGY, HI_JUMP_KICK, MEGA_KICK),
+		new Pokemon(ONIX,53, ROCK_THROW, RAGE, SLAM, HARDEN),
+		new Pokemon(MACHAMP,53, LEER, FISSURE, FOCUS_ENERGY, SUBMISSION)));
+
+	EliteFour[2] = new Trainer("Agatha", new PokeParty(
+		new Pokemon(40,55,CONFUSE_RAY,NIGHT_SHADE,HYPNOSIS,DREAM_EATER),					// gengar
+		new Pokemon(43,56, SUPERSONIC, CONFUSE_RAY, WING_ATTACK, HAZE),						// golbat
+		new Pokemon(51,55, CONFUSE_RAY, NIGHT_SHADE, HYPNOSIS, DREAM_EATER),				// haunter 
+		new Pokemon(3,58, BITE, GLARE, SCREECH, ACID),										// arbok
+		new Pokemon(40,60, CONFUSE_RAY, NIGHT_SHADE, TOXIC, DREAM_EATER)					// Gengar
+	));
 	
 	/*
 		This code loads the Battle data and
@@ -199,10 +220,6 @@ int main(int argc, char* argv[])
 			}
 		};
 		keyboardstate = SDL_GetKeyboardState(NULL);
-		if(keyboardstate[SDL_SCANCODE_SPACE])
-		{
-			player->activeMessage = new Message("HELLO");
-		};
 		keys.Timer++;
 		PauseTimer++;
 		if(keys.Timer >= 15 || (player->GetInBattle() == false && player->inPauseMenu == false) )
@@ -224,19 +241,30 @@ int main(int argc, char* argv[])
 				};
 			};
 		};
+		if(keyboardstate[SDL_SCANCODE_SPACE])
+		{
+			GAMESTATE = GAME_LOST;
+			player->activeMessage = new Message(Language_Master::StringToCString(Language_Master::FAILURE_TEXT));
+		};
+		
+		if(player->beatTrainer1 && player->beatTrainer2 && player->beatTrainer3 && GAMESTATE != GAME_WON)
+		{
+			player->activeMessage = new Message(Language_Master::StringToCString(Language_Master::VICTORY_TEXT));
+			GAMESTATE = GAME_WON;
+		};
 
-		SDL_SetRenderDrawColor(sdlRenderer, 255, 255, 255, 255);
+		SDL_SetRenderDrawColor(sdlRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(sdlRenderer);	
 		switch (GAMESTATE)
 		{
 			case MAIN_MENU:
 				mainMenu->Draw(sdlRenderer, LoadedPokemonSprites.POKEMON_FRONT_SPRITES);
-				if( Mix_PlayingMusic() == 0 && mainMenu->GetState() == PRESS_START)
+				if( Mix_PlayingMusic() == 0 && mainMenu->GetState() == PRESS_START )
 				{
-					//Play the music
 					Mix_PlayMusic( mainmenuMusic, -1 );
 				}
-				if(ANY_KEY_PRESSED == true)
+				SDL_PumpEvents();
+				if((SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) || ANY_KEY_PRESSED == true)
 				{
 					if(mainMenu->GetState()==MainMenuStates::NEW_CONTINUE_GAME_OPTIONS)
 					{
@@ -249,8 +277,8 @@ int main(int argc, char* argv[])
 					else
 					{
 						mainMenu->SetState(MainMenuStates::NEW_CONTINUE_GAME_OPTIONS);
-						player->activeMessage = new Message("BEAT THE ELITE THREE TO WIN!");
-						SDL_Delay(1000/FPS);
+						player->activeMessage = new Message(Language_Master::StringToCString(Language_Master::OPENING_STRING));
+						SDL_Delay(1000); // To stop people accidentally "overclicking"
 					};
 				};
 				if(mainMenu->GetState()==MainMenuStates::NEW_CONTINUE_GAME_OPTIONS)
@@ -278,6 +306,10 @@ int main(int argc, char* argv[])
 					if(player->inPauseMenu)
 					{
 						DrawPauseMenu(sdlRenderer, pauseMenu, player, &keys, BattleSprites, &quit, UpperCaseFont,numbers);
+						if(keys.BACKSPACE)
+						{
+							player->inPauseMenu = false;
+						};
 					};
 					if(player->activeMessage->Active == true)
 					{
@@ -304,7 +336,7 @@ int main(int argc, char* argv[])
 					{
 						Mix_PlayMusic( battleMusic, -1 );
 					}
-					currentBattle->Logic(&keys,player, &quit);
+					currentBattle->Logic(&keys,player, &quit, sdlRenderer, &GAMESTATE);
 					if(player->GetInBattle() == true)
 					{
 						DrawBattle(sdlRenderer, player, currentBattle, BattleSprites, numbers, UpperCaseFont, &keys);
@@ -316,9 +348,22 @@ int main(int argc, char* argv[])
 				};
 				break;
 			case GAME_WON:
-				// draw the three player pokemon here
-				// draw a YOU WIN graphic
-				// have a text box say "press any key to exit"
+				SDL_RenderCopy(sdlRenderer, BattleSprites->victory_screen, NULL, NULL);
+				player->activeMessage->Update(sdlRenderer, textBox, UpperCaseFont, &keys);
+				if(ANY_KEY_PRESSED == true && player->activeMessage->Complete == true)
+				{
+					SDL_Delay(1000/FPS);
+					quit = true;
+				};
+				break;
+			case GAME_LOST:
+				SDL_RenderCopy(sdlRenderer, BattleSprites->failure_screen, NULL, NULL);
+				player->activeMessage->Update(sdlRenderer, textBox, UpperCaseFont, &keys);
+				if(ANY_KEY_PRESSED == true && player->activeMessage->Complete == true)
+				{
+					SDL_Delay(2000);
+					quit = true;
+				};
 				break;
 			default:
 				break;
@@ -376,7 +421,12 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 	} else {
 		DrawStaticText(StatusConditionStrings[_currentBattle->GetActivePokemon().StatusCond], 120,65,sdlRenderer,UpperCaseFont);
 	};
-	DrawNumber(_currentBattle->pokemon.Level, 40, 9, _number_sprites, sdlRenderer,false);
+	if(_currentBattle->pokemon.StatusCond == NONE)
+	{
+		DrawNumber(_currentBattle->pokemon.Level, 40, 9, _number_sprites, sdlRenderer,false);
+	} else {
+		DrawStaticText(StatusConditionStrings[_currentBattle->pokemon.StatusCond], 40,9,sdlRenderer,UpperCaseFont);
+	};
 
 	SDL_Rect PlayerPokeBackSprite_Rect = {8,40,64,64}; //104, 16
 	int w, h;
@@ -454,6 +504,7 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 			};
 			DrawNumber(_currentBattle->GetActivePokemon().MoveSet[_currentBattle->SelectedAttack].PP, 56,90, _number_sprites,sdlRenderer, true );
 			DrawNumber(MOVES_ARRAY[_currentBattle->GetActivePokemon().MoveSet[_currentBattle->SelectedAttack].Index].PP, 64,90, _number_sprites,sdlRenderer, false );
+			DrawStaticText(TYPE_NAMES[int(MOVES_ARRAY[_currentBattle->GetActivePokemon().MoveSet[_currentBattle->SelectedAttack].Index].Type)], 8, 81, sdlRenderer, UpperCaseFont);
 		}
 		else if(_currentBattle->SelectedMenuItem == 1 && _currentBattle->MenuDepth > 0)
 		{
@@ -461,7 +512,7 @@ void DrawBattle(SDL_Renderer *sdlRenderer, Player *_player, Battle *_currentBatt
 		}
 		else if(_currentBattle->SelectedMenuItem == 2 && _currentBattle->MenuDepth > 0)
 		{
-			DrawItemMenu(sdlRenderer, _battleSprites, _player,UpperCaseFont,_number_sprites, _keys);
+			DrawItemMenu(sdlRenderer, _battleSprites, _player,UpperCaseFont,_number_sprites, _keys, _currentBattle);
 		};
 	};
 };
@@ -512,16 +563,22 @@ void UpdateViewport(Viewport *viewport, Player *player, Battle * _currentBattle)
 	};
 	if(viewport->m_x == (8 + (16 * player->m_x)) && viewport->m_y == (8 + (16 * player->m_y)))
 	{
-		// init pokebattle here
-		/*if(player->m_moving == true)
-		{
-			int tempRand = (rand()%100);
-			std::cout << tempRand << std::endl;
-			if(tempRand > 90)
-			{
-				player->SetIsBattleScheduled(true);
-			};
-		};*/
+		// THIS IS WHERE A WILD BATTLE WOULD BE INITIALIZED.================================
+
+		//  THIS IS LEFTOVER FROM PROTOTYPE CODE THAT IS UNUSED
+		//  IN THE ASSIGNMENT.
+
+							/*if(player->m_moving == true)
+							{
+								int tempRand = (rand()%100);
+								std::cout << tempRand << std::endl;
+								if(tempRand > 90)
+								{
+									player->SetIsBattleScheduled(true);
+								};
+							};*/
+
+		// THIS IS WHERE A WILD BATTLE WOULD BE INITIALIZED.================================
 		player->m_moving = false;	
 	};
 	return;
@@ -610,7 +667,7 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 		switch(_player->pauseMenuDepth)
 		{
 			case 0:
-				if(_player->selectedPauseItem == 6)
+				if(_player->selectedPauseItem == 4)
 				{
 					_player->selectedPauseItem = 0;
 				}
@@ -661,7 +718,7 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 			case 0:
 				if(_player->selectedPauseItem == 0)
 				{
-					_player->selectedPauseItem = 6;
+					_player->selectedPauseItem = 4;
 				}
 				else 
 				{
@@ -726,12 +783,12 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 		switch(_player->selectedPauseItem)
 		{
 			case 0:
-				_player->pauseMenuDepth++;
-				if(_player->pauseMenuDepth != 2)
-					_player->selectedMenuItem = 0;
+				if(_player->pauseMenuDepth < 1)
+					_player->pauseMenuDepth++;
 				break;
 			case 1:
-				_player->pauseMenuDepth++;
+				if(_player->pauseMenuDepth < 1)
+					_player->pauseMenuDepth++;
 				_player->selectedMenuItem = 0;
 				break;
 			case 2:
@@ -741,12 +798,6 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 				_player->pauseMenuDepth++;
 				break;
 			case 4:
-				_player->pauseMenuDepth++;
-				break;
-			case 5:
-				_player->pauseMenuDepth++;
-				break;
-			case 6:
 				*_quit = true;
 				break;
 			default:
@@ -760,7 +811,7 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 	SDL_RenderCopy(_sdlRenderer, _battlescrn->arrow, NULL, &arrowRect);
 	if(_player->pauseMenuDepth > 0 && _player->selectedPauseItem == 2)
 	{
-		DrawItemMenu(_sdlRenderer, _battlescrn, _player,_upperCaseFont,_numberFont, _keys);
+		DrawItemMenu(_sdlRenderer, _battlescrn, _player,_upperCaseFont,_numberFont, _keys, currentBattle);
 	};
 	if(_player->pauseMenuDepth > 0 && _player->selectedPauseItem == 1)
 	{
@@ -775,11 +826,11 @@ void DrawPauseMenu(SDL_Renderer* _sdlRenderer, SDL_Texture* _pauseTex, Player* _
 
 void DrawPkmnSelectMenu(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Player* _player, SDL_Texture* _upperCaseFont, SDL_Texture* _numberFont, Keys* _keys)
 {
-	if(_keys->S && currentBattle->MenuDepth < 2)
+	if(_keys->S && currentBattle->MenuDepth < 2 && _player->selectedMenuItem < (_player->GetParty()->Party.size()-1))
 	{
 		_player->selectedMenuItem++;
 	}
-	else if(_keys->W && currentBattle->MenuDepth < 2)
+	else if(_keys->W && currentBattle->MenuDepth < 2&& _player->selectedMenuItem > 0)
 	{
 		_player->selectedMenuItem--;
 	};
@@ -807,12 +858,27 @@ void DrawPkmnSelectMenu(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites
 	{
 		SDL_RenderCopy(_sdlRenderer, _battleSprites->pkmnselection_box,NULL,NULL);
 	};
+	if(_player->GetInBattle() == false)
+	{
+		SDL_Rect tempRect = {7,111,147-7,124-111};
+		SDL_SetRenderDrawColor(_sdlRenderer, 248, 248, 248, SDL_ALPHA_OPAQUE);
+		SDL_RenderFillRect(_sdlRenderer, &tempRect);
+		SDL_SetRenderDrawColor(_sdlRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+	};
 
 	return;
 };
 
 void DrawPokedex(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Player* _player, SDL_Texture* _upperCaseFont, SDL_Texture* _numberFont)
 {
+	if(_player->pokedexPage > 21)
+	{
+		_player->pokedexPage = 21;
+	}
+	else if(_player->pokedexPage == 21 && _player->selectedMenuItem > 3)
+	{
+			_player->selectedMenuItem = 5;
+	};
 	SDL_RenderCopy(_sdlRenderer, _battleSprites->pokedex, NULL, NULL);
 	SDL_Rect arrowRect = {1,26+(16*_player->selectedMenuItem),7,7};
 	SDL_RenderCopy(_sdlRenderer, _battleSprites->arrow, NULL, &arrowRect);
@@ -822,36 +888,21 @@ void DrawPokedex(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Playe
 		DrawStaticText(pokemon_names[i], 33, 25+((i-(_player->pokedexPage * 7))*16), _sdlRenderer, _upperCaseFont);
 	};
 
-	std::cout << "\n" << _player->pauseMenuDepth << "\n" <<_player->selectedMenuItem2;
+	int temp = ((_player->pokedexPage * 7)+_player->selectedMenuItem);
+	DrawStaticText(TYPE_NAMES[POKEDEX_REFERENCE[temp].Type1], 120,71, _sdlRenderer, _upperCaseFont);
+	DrawNumber( ((POKEDEX_REFERENCE[temp].DexNum)+1), 120, 88, _numberFont, _sdlRenderer, false);
 
 	if(_player->pauseMenuDepth == 2)
 	{
-		SDL_Rect arrowRect = {121,80+(16*_player->selectedMenuItem2),7,7};
-		SDL_RenderCopy(_sdlRenderer, _battleSprites->arrow, NULL, &arrowRect);
-	} 
-	else if(_player->pauseMenuDepth == 3 && _player->selectedMenuItem2 == 0)
-	{
 		SDL_RenderCopy(_sdlRenderer, _battleSprites->pokedexdetails, NULL, NULL);
-	} 
-	else if(_player->pauseMenuDepth == 3 && _player->selectedMenuItem2 == 3)
-	{
-		_player->pauseMenuDepth = 1;
-		_player->selectedMenuItem2 = 0;
 	};
 
 	return;
 };
 
-void DrawItemMenu(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Player* _player, SDL_Texture* _upperCaseFont, SDL_Texture* _numberFont, Keys* _keys)
+void DrawItemMenu(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Player* _player, SDL_Texture* _upperCaseFont, SDL_Texture* _numberFont, Keys* _keys, Battle *_battle)
 {
-	if(_keys->S && _player->pauseMenuDepth < 2)
-	{
-		_player->selectedMenuItem++;
-	}
-	else if(_keys->W && _player->pauseMenuDepth < 2)
-	{
-		_player->selectedMenuItem--;
-	};
+	_player->selectedMenuItem = 0;
 	SDL_RenderCopy(_sdlRenderer, _battleSprites->itemsMenu, NULL, NULL);
 	SDL_Rect arrowRect = {40,34+(16*_player->selectedMenuItem),7,7};
 	SDL_RenderCopy(_sdlRenderer, _battleSprites->arrow, NULL, &arrowRect);
@@ -863,8 +914,11 @@ void DrawItemMenu(SDL_Renderer* _sdlRenderer, BattleScreen* _battleSprites, Play
 	DrawStaticText("CANCEL", 48, 32+(_player->m_inventory.size()*16), _sdlRenderer, _upperCaseFont);
 	if(_player->pauseMenuDepth > 1)
 	{
-		DrawPkmnSelectMenu(_sdlRenderer,_battleSprites,_player,_upperCaseFont,_numberFont,_keys);
+		//DrawPkmnSelectMenu(_sdlRenderer,_battleSprites,_player,_upperCaseFont,_numberFont,_keys);
+		_player->pauseMenuDepth = 0;
 	};
+	if(_battle && _battle->MenuDepth > 1)
+		_battle->MenuDepth = 0;
 	return;
 };
 

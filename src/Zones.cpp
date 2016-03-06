@@ -13,6 +13,7 @@ void Zone::LoadObjectData(char *filename, SDL_Renderer *sdlRenderer)
 	size_t lastindex = pokemap_filename.find_last_of("."); 
 	pokemap_filename = pokemap_filename.substr(0, lastindex); 
 	pokemap_filename += ".pokemap";
+	pokemap_filename = "./zones/"+pokemap_filename;
 
 	//Load file
 	std::ifstream ifs(pokemap_filename,std::ios::binary);
@@ -139,8 +140,8 @@ void Zone::Init(SDL_Renderer *sdlRenderer,char *datafilename)
 	std::string test(datafilename);
 	size_t lastindex = test.find_last_of("."); 
 	test = test.substr(0, lastindex); 
-	test = ("sfx/" + test + ".mp3");
-	this->music = Mix_LoadMUS( "sfx/indigoplateau.mp3" );
+	test = ("./sfx/" + test + ".mp3");
+	this->music = Mix_LoadMUS( test.c_str() );
 };
 
 
@@ -150,6 +151,7 @@ void Zone::LoadImage(char *filename, SDL_Renderer *sdlRenderer)
 	size_t lastindex = pokemap_filename.find_last_of("."); 
 	pokemap_filename = pokemap_filename.substr(0, lastindex); 
 	pokemap_filename += ".png";
+	pokemap_filename = "./zones/" + pokemap_filename;
 	Zone::image = IMG_LoadTexture(sdlRenderer,pokemap_filename.c_str());
 };
 

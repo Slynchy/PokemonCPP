@@ -22,10 +22,10 @@ void Message::Update(SDL_Renderer *sdlRenderer, SDL_Texture *frame, SDL_Texture 
 		if(i > strlen(message))
 			break;
 		std::string temp("");
-		if(this->message[i] == '\n' || floorFrame > 15)
+		/*if(this->message[i] == '\n' || floorFrame > 15)
 		{
 			//line2 = true;
-		};
+		};*/
 		temp += this->message[i];
 		if(i >= 15)
 		{
@@ -37,7 +37,7 @@ void Message::Update(SDL_Renderer *sdlRenderer, SDL_Texture *frame, SDL_Texture 
 		};
 	};
 
-	if(keys->ENTER && Frame > 4.0f)
+	if(keys->ENTER && Frame > (strlen(message)-2.0f))
 	{
 		Active = false;
 		this->Complete = true;

@@ -85,7 +85,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer1  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::LORELEI_TEXT));
 					currentOpponentID = 1;
 				};
 			};
@@ -93,7 +93,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer2  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::BRUNO_TEXT));
 					currentOpponentID = 2;
 				};
 			};
@@ -102,7 +102,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 				if(beatTrainer3  == false)
 				{
 					currentOpponentID = 3;
-					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!", 0.14f);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::AGATHA_TEXT));
 				};
 			};
 			break;
@@ -111,7 +111,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer1  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::LORELEI_TEXT));
 					currentOpponentID = 1;
 				};
 			};
@@ -119,7 +119,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer2  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::BRUNO_TEXT));
 					currentOpponentID = 2;
 				};
 			};
@@ -127,7 +127,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::AGATHA_TEXT));
 					currentOpponentID = 3;
 				};
 			};
@@ -137,7 +137,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer1  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::LORELEI_TEXT));
 					currentOpponentID = 1;
 				};
 			};
@@ -145,7 +145,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer2  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::BRUNO_TEXT));
 					currentOpponentID = 2;
 				};
 			};
@@ -153,7 +153,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::AGATHA_TEXT));
 					currentOpponentID = 3;
 				};
 			};
@@ -163,7 +163,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer1  == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::LORELEI_TEXT));
 					currentOpponentID = 1;
 				};
 			};
@@ -171,7 +171,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer2 == false)
 				{
-					SetIsBattleScheduled(true);
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::BRUNO_TEXT));
 					currentOpponentID = 2;
 				};
 			};
@@ -179,7 +179,7 @@ void Player::KeyboardInput(Keys *keys, std::vector<Zone>& levelCollisionArray)
 			{
 				if(beatTrainer3  == false)
 				{
-					this->activeMessage = new Message("I AM AGATHA OF THE ELITE FOUR!");
+					this->activeMessage = new Message(Language_Master::StringToCString(Language_Master::AGATHA_TEXT));
 					currentOpponentID = 3;
 				};
 			};
