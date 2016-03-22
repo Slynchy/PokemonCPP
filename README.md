@@ -1,5 +1,5 @@
 # PokemonCPP
-Prototype port of Pokemon Blue to C++
+Prototype port of Pokemon Blue's engine to C++. Made for a university assignment.
 
 # What does each folder do?
 - PokemonCPP
